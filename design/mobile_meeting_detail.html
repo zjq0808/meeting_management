@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>会议详情 - 移动端</title>
+<script src="https://modao.cc/agent-py/static/source/js/tailwindcss.js"></script>
+<script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.js"></script>
+<style>
+        body { background-color: #f3f4f6; }
+        .mobile-container {
+            width: 375px;
+            height: 812px;
+            margin: 0 auto;
+            background-color: #f5f7fa;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .scroll-content::-webkit-scrollbar { display: none; }
+        .modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 50;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+    </style>
+</head>
+<body>
+<div class="mobile-container">
+<!-- 顶部导航栏 -->
+<header class="bg-[#1a73e8] text-white h-14 flex items-center justify-between px-4 flex-none shadow-md">
+<button class="w-8 h-8 flex items-center justify-center">
+<iconify-icon icon="mdi:arrow-left" width="24"></iconify-icon>
+</button>
+<h1 class="text-lg font-medium">会议详情</h1>
+<button class="w-8 h-8 flex items-center justify-center">
+<iconify-icon icon="mdi:dots-vertical" width="24"></iconify-icon>
+</button>
+</header>
+<!-- 主体内容 -->
+<main class="scroll-content p-4 space-y-4">
+<!-- 会议基本信息卡片 -->
+<section class="bg-white rounded-xl p-4 shadow-sm space-y-3">
+<div class="flex justify-between items-start">
+<h2 class="text-gray-900 font-bold text-lg leading-tight flex-1 mr-2">
+                        2026-06-26 第一期 三重一大会议
+                    </h2>
+<span class="bg-blue-100 text-[#1a73e8] text-xs px-2 py-1 rounded font-medium flex-none">进行中</span>
+</div>
+<div class="space-y-2 text-sm text-gray-600">
+<div class="flex items-center gap-2">
+<iconify-icon class="text-gray-400" icon="mdi:clock-outline"></iconify-icon>
+<span>2026-06-26 15:00 - 17:30</span>
+</div>
+<div class="flex items-center gap-2">
+<iconify-icon class="text-gray-400" icon="mdi:map-marker-outline"></iconify-icon>
+<span>营 08-047 会议室</span>
+</div>
+<div class="flex items-center gap-2">
+<iconify-icon class="text-gray-400" icon="mdi:tag-outline"></iconify-icon>
+<span>第20260601期</span>
+</div>
+</div>
+<div class="pt-2 border-t border-gray-100 grid grid-cols-2 gap-4">
+<div>
+<p class="text-xs text-gray-400 mb-1">参会人员 (5人)</p>
+<button class="text-[#1a73e8] text-sm font-medium flex items-center gap-1" onclick="showPeopleModal('attendees')">
+                            查看 <iconify-icon icon="mdi:chevron-right"></iconify-icon>
+</button>
+</div>
+<div>
+<p class="text-xs text-gray-400 mb-1">汇报人员 (3人)</p>
+<button class="text-[#1a73e8] text-sm font-medium flex items-center gap-1" onclick="showPeopleModal('reporters')">
+                            查看 <iconify-icon icon="mdi:chevron-right"></iconify-icon>
+</button>
+</div>
+</div>
+</section>
+<!-- 参会议题信息 -->
+<section class="space-y-3">
+<h3 class="text-gray-800 font-bold flex items-center gap-2 px-1">
+<span class="w-1 h-4 bg-[#1a73e8] rounded-full"></span>
+                    参会议题信息
+                </h3>
+<!-- 议题 01 -->
+<div class="bg-white rounded-xl p-4 shadow-sm space-y-3">
+<div class="flex gap-3">
+<span class="bg-gray-100 text-gray-500 text-xs font-bold w-6 h-6 rounded flex items-center justify-center flex-none">01</span>
+<div class="flex-1">
+<h4 class="text-gray-900 font-bold mb-1">纪录片《丝绸之路》委托制作项目合同立项事宜</h4>
+<div class="text-xs text-gray-500 space-y-0.5">
+<p>汇报部门：电视剧频道编辑部</p>
+<p>参会部门：综合部</p>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-2 border-t border-dashed border-gray-100">
+<span class="text-sm text-gray-600">已选择 <span class="font-bold text-gray-900">3</span> 人</span>
+<button class="bg-blue-50 text-[#1a73e8] px-4 py-1.5 rounded-full text-sm font-medium" onclick="openSelectionModal(1)">选择</button>
+</div>
+</div>
+<!-- 议题 02 -->
+<div class="bg-white rounded-xl p-4 shadow-sm space-y-3">
+<div class="flex gap-3">
+<span class="bg-gray-100 text-gray-500 text-xs font-bold w-6 h-6 rounded flex items-center justify-center flex-none">02</span>
+<div class="flex-1">
+<h4 class="text-gray-900 font-bold mb-1">纪录片《长江文化》委托制作项目合同立项事宜</h4>
+<div class="text-xs text-gray-500 space-y-0.5">
+<p>汇报部门：综合部</p>
+<p>参会部门：综合部</p>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-2 border-t border-dashed border-gray-100">
+<span class="text-sm text-gray-600">已选择 <span class="font-bold text-gray-900">3</span> 人</span>
+<button class="bg-blue-50 text-[#1a73e8] px-4 py-1.5 rounded-full text-sm font-medium" onclick="openSelectionModal(2)">选择</button>
+</div>
+</div>
+</section>
+</main>
+<!-- 底部固定栏 -->
+<footer class="bg-white border-t border-gray-100 p-4 flex-none">
+<button class="w-full bg-[#1a73e8] text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200">返回</button>
+</footer>
+<!-- 人员查看弹窗 -->
+<div class="modal-overlay" id="peopleModal">
+<div class="bg-white w-[300px] rounded-2xl overflow-hidden shadow-2xl">
+<div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+<h3 class="font-bold text-gray-800 text-center flex-1" id="peopleModalTitle">人员名单</h3>
+<button class="text-gray-400 hover:text-gray-600" onclick="closeModal('peopleModal')">
+<iconify-icon icon="mdi:close" width="20"></iconify-icon>
+</button>
+</div>
+<div class="p-4 space-y-3 max-h-[300px] overflow-y-auto" id="peopleList">
+<!-- 人员内容由 JS 填充 -->
+</div>
+</div>
+</div>
+<!-- 选择人员弹窗 -->
+<div class="modal-overlay" id="selectionModal">
+<div class="bg-white w-[330px] rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[600px]">
+<div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+<h3 class="font-bold text-gray-800 text-center flex-1" id="selectionTitle">选择参会人员</h3>
+<button class="text-gray-400" onclick="closeModal('selectionModal')">
+<iconify-icon icon="mdi:close" width="20"></iconify-icon>
+</button>
+</div>
+<div class="p-4 overflow-y-auto flex-1 space-y-4" id="departmentList">
+<!-- 部门分组内容由 JS 填充 -->
+</div>
+<div class="p-4 border-t border-gray-100 flex gap-3">
+<button class="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-lg font-medium" onclick="closeModal('selectionModal')">取消</button>
+<button class="flex-1 py-2.5 bg-[#1a73e8] text-white rounded-lg font-medium" onclick="closeModal('selectionModal')">确定</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+        const peopleData = {
+            attendees: { title: '参会人员名单', list: ['张三', '李四', '王五', '赵六', '孙七'] },
+            reporters: { title: '汇报人员名单', list: ['赵六', '孙七', '周八'] }
+        };
+
+        const deptData = {
+            '综合部': ['张三', '李四', '王五'],
+            '电视剧频道编辑部': ['赵六', '孙七', '周八'],
+            '新媒体部': ['吴九', '郑十'],
+            '纪录频道编辑部': ['陈一', '刘二']
+        };
+
+        const issueData = {
+            1: { title: '纪录片《丝绸之路》...', depts: ['电视剧频道编辑部', '综合部'] },
+            2: { title: '纪录片《长江文化》...', depts: ['综合部'] }
+        };
+
+        function showPeopleModal(type) {
+            const data = peopleData[type];
+            document.getElementById('peopleModalTitle').innerText = data.title;
+            const container = document.getElementById('peopleList');
+            container.innerHTML = data.list.map(name => `
+                <div class="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 text-[#1a73e8] flex items-center justify-center text-xs font-bold">
+                        ${name.substring(0,1)}
+                    </div>
+                    <span class="text-gray-700 font-medium">${name}</span>
+                </div>
+            `).join('');
+            document.getElementById('peopleModal').classList.add('active');
+        }
+
+        function openSelectionModal(issueId) {
+            const issue = issueData[issueId];
+            document.getElementById('selectionTitle').innerText = `选择参会人员 - 议题 0${issueId}`;
+            const container = document.getElementById('departmentList');
+            
+            let html = '';
+            issue.depts.forEach(deptName => {
+                const users = deptData[deptName];
+                html += `
+                    <div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <iconify-icon icon="mdi:folder-account" class="text-blue-500"></iconify-icon>
+                            <span class="text-sm font-bold text-gray-800">${deptName}</span>
+                        </div>
+                        <div class="space-y-2 pl-6">
+                            ${users.map(name => `
+                                <label class="flex items-center justify-between p-2 rounded-lg bg-gray-50 active:bg-blue-50 transition-colors">
+                                    <span class="text-sm text-gray-700">${name}</span>
+                                    <input type="checkbox" checked class="w-4 h-4 rounded border-gray-300 text-[#1a73e8] focus:ring-[#1a73e8]">
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // 补充非重点部门作为可折叠项
+            const otherDepts = Object.keys(deptData).filter(d => !issue.depts.includes(d));
+            otherDepts.forEach(deptName => {
+                html += `
+                    <div class="opacity-60">
+                         <div class="flex items-center gap-2 mb-2">
+                            <iconify-icon icon="mdi:folder-account" class="text-gray-400"></iconify-icon>
+                            <span class="text-sm font-bold text-gray-500">${deptName} (点击展开)</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            document.getElementById('selectionModal').classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+    </script>
+</body>
+</html>

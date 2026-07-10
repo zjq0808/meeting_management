@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:meeting_management;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+      schema-locations: classpath:schema-test.sql
+      data-locations: classpath:data-test.sql
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+
+meeting:
+  group-code: DEFAULT
+  sign-token-ttl-minutes: 240
+  max-attendees-per-topic: 3

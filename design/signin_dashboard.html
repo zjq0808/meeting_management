@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>议题签到管理 - 影视剧纪录片中心</title>
+<script src="https://modao.cc/agent-py/static/source/js/tailwindcss.js"></script>
+<script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.js"></script>
+</head>
+<body class="bg-[#f5f7fa] text-[#333] font-sans">
+<div class="flex flex-col min-h-screen">
+<!-- 顶部导航 -->
+<header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
+<div class="flex items-center gap-6">
+<a class="text-gray-400 hover:text-blue-600 transition-colors" href="meeting_console.html">
+<iconify-icon icon="ri:arrow-left-line" width="24"></iconify-icon>
+</a>
+<h1 class="text-lg font-bold">2026-06-26 第一期 三重一大会议 - 议题签到管理</h1>
+</div>
+</header>
+<main class="flex-1 p-6 space-y-6 max-w-[1400px] mx-auto w-full">
+<div class="flex gap-6">
+<!-- 左侧：二维码区域 -->
+<div class="w-1/3 bg-white rounded-xl shadow-sm border border-gray-200 p-8 flex flex-col items-center justify-center">
+<h2 class="text-lg font-bold mb-6">会议签到二维码</h2>
+<div class="bg-white p-4 border-2 border-blue-100 rounded-2xl shadow-inner mb-6 relative">
+<img alt="Meeting QR Code" class="w-64 h-64" src="https://modao.cc/agent-py/media/generated_images/2026-06-26/38245d186e354943b4cf09e8184513f2.jpg"/>
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+<iconify-icon icon="ri:qr-code-line" width="120"></iconify-icon>
+</div>
+</div>
+<p class="text-sm text-gray-500 mb-2">请参会人员使用手机扫码签到</p>
+<div class="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium">
+<span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                        实时更新中...
+                    </div>
+</div>
+<!-- 右侧：议题签到管理 -->
+<div class="w-2/3 space-y-6">
+<!-- 统计卡片 -->
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+<span class="text-xs text-gray-400 block mb-1">总议题数</span>
+<div class="flex items-baseline gap-1">
+<span class="text-3xl font-bold">5</span>
+<span class="text-sm text-gray-500">个</span>
+</div>
+</div>
+<div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-blue-500">
+<span class="text-xs text-gray-400 block mb-1">已签到议题数</span>
+<div class="flex items-baseline gap-1">
+<span class="text-3xl font-bold text-blue-600">3</span>
+<span class="text-sm text-gray-500">个</span>
+</div>
+</div>
+</div>
+<!-- 议题签到列表 -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+<div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+<h3 class="font-bold">议题签到状态</h3>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-sm">
+<thead class="bg-gray-50 text-gray-500">
+<tr>
+<th class="px-6 py-3 border-b">序号</th>
+<th class="px-6 py-3 border-b">议题名称</th>
+<th class="px-6 py-3 border-b">申报部门</th>
+<th class="px-6 py-3 border-b">签到状态</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-gray-100">
+<tr>
+<td class="px-6 py-4">01</td>
+<td class="px-6 py-4 font-medium">纪录片《丝绸之路》委托制作项目合同立项事宜</td>
+<td class="px-6 py-4">电视剧频道编辑部</td>
+<td class="px-6 py-4">
+<span class="text-green-600 flex items-center gap-1 font-medium"><iconify-icon icon="ri:checkbox-circle-fill"></iconify-icon> 已签到</span>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4">02</td>
+<td class="px-6 py-4 font-medium">纪录片《长江文化》委托制作项目合同立项事宜</td>
+<td class="px-6 py-4">综合部</td>
+<td class="px-6 py-4">
+<span class="text-green-600 flex items-center gap-1 font-medium"><iconify-icon icon="ri:checkbox-circle-fill"></iconify-icon> 已签到</span>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4">03</td>
+<td class="px-6 py-4 font-medium">2023年度重大宣传项目经费预算审批</td>
+<td class="px-6 py-4">综合部</td>
+<td class="px-6 py-4">
+<span class="text-orange-500 flex items-center gap-1 font-medium"><iconify-icon icon="ri:time-fill"></iconify-icon> 未签到</span>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4">04</td>
+<td class="px-6 py-4 font-medium">新媒体平台内容合作框架协议</td>
+<td class="px-6 py-4">新媒体部</td>
+<td class="px-6 py-4">
+<span class="text-orange-500 flex items-center gap-1 font-medium"><iconify-icon icon="ri:time-fill"></iconify-icon> 未签到</span>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4">05</td>
+<td class="px-6 py-4 font-medium">电视剧《山河》采购项目立项</td>
+<td class="px-6 py-4">电视剧频道编辑部</td>
+<td class="px-6 py-4">
+<span class="text-green-600 flex items-center gap-1 font-medium"><iconify-icon icon="ri:checkbox-circle-fill"></iconify-icon> 已签到</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

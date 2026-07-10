@@ -1,0 +1,24 @@
+server:
+  port: 9090
+  servlet:
+    context-path: /
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:meeting_management}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:123456}
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 55MB
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+
+meeting:
+  group-code: ${MEETING_GROUP_CODE:DEFAULT}
+  sign-token-ttl-minutes: 240
+  max-attendees-per-topic: 60

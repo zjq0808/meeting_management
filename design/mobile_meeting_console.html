@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>会议控制台 - 移动端</title>
+<script src="https://modao.cc/agent-py/static/source/js/tailwindcss.js"></script>
+<script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.js"></script>
+<style>
+        body { background-color: #f3f4f6; }
+        .mobile-container {
+            width: 375px;
+            height: 812px;
+            margin: 0 auto;
+            background-color: #f5f7fa;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .scroll-content::-webkit-scrollbar { display: none; }
+        .modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 50;
+            display: none;
+            align-items: flex-end;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: white;
+            width: 100%;
+            border-radius: 20px 20px 0 0;
+            padding: 24px;
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .pulse {
+            animation: pulse-animation 2s infinite;
+        }
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0px rgba(26, 115, 232, 0.4); }
+            100% { box-shadow: 0 0 0 8px rgba(26, 115, 232, 0); }
+        }
+    </style>
+</head>
+<body>
+<div class="mobile-container">
+<!-- 顶部导航栏 -->
+<header class="bg-[#1a73e8] text-white h-14 flex items-center justify-between px-4 flex-none shadow-md">
+<button class="w-8 h-8 flex items-center justify-center">
+<iconify-icon icon="mdi:arrow-left" width="24"></iconify-icon>
+</button>
+<h1 class="text-lg font-medium">会议控制台</h1>
+<button class="w-8 h-8 flex items-center justify-center">
+<iconify-icon icon="mdi:dots-vertical" width="24"></iconify-icon>
+</button>
+</header>
+<!-- 主体内容 -->
+<main class="scroll-content p-4 space-y-4">
+<!-- 进度进度条卡片 -->
+<section class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
+<div class="text-center">
+<p class="text-xs text-gray-400 mb-1 uppercase tracking-wider font-bold">Current Meeting</p>
+<h2 class="text-gray-900 font-bold text-base mb-4">2026-06-26 第一期 三重一大会议</h2>
+</div>
+<div class="flex items-center justify-between">
+<div>
+<p class="text-xs text-gray-400">当前进度</p>
+<p class="text-2xl font-black text-gray-900 mt-1">第 <span class="text-[#1a73e8]">2</span> 项 / 共 5 项</p>
+</div>
+<div class="text-right">
+<p class="text-xs text-gray-400">会议总计时</p>
+<div class="flex items-center gap-1 text-[#1a73e8] font-mono font-bold mt-1">
+<iconify-icon icon="mdi:timer-outline"></iconify-icon>
+<span id="mainTimer">00:45:32</span>
+</div>
+</div>
+</div>
+<div class="space-y-1.5">
+<div class="flex justify-between text-[10px] text-gray-400 font-bold">
+<span>PROGRESS</span>
+<span>40%</span>
+</div>
+<div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+<div class="bg-gradient-to-r from-[#1a73e8] to-blue-400 h-full w-[40%] rounded-full"></div>
+</div>
+</div>
+</section>
+<!-- 议题时间轴 -->
+<section class="space-y-3 relative before:absolute before:left-7 before:top-4 before:bottom-4 before:w-0.5 before:bg-gray-200">
+<!-- 已结束 01 -->
+<div class="relative pl-12">
+<div class="absolute left-5 top-5 w-4 h-4 rounded-full bg-green-500 border-4 border-white shadow-sm z-10"></div>
+<div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-green-500 opacity-80">
+<div class="flex justify-between items-start mb-2">
+<h4 class="text-sm font-bold text-gray-800">01 纪录片《丝绸之路》委托制作项目合同立项事宜</h4>
+<span class="bg-green-100 text-green-600 text-[10px] px-1.5 py-0.5 rounded flex-none">已结束</span>
+</div>
+<div class="flex items-center justify-between text-xs">
+<span class="text-gray-400">实际用时：18分钟</span>
+<button class="text-[#1a73e8] font-bold" onclick="openConclusionModal('01')">查看结论</button>
+</div>
+</div>
+</div>
+<!-- 进行中 02 -->
+<div class="relative pl-12">
+<div class="absolute left-5 top-5 w-4 h-4 rounded-full bg-[#1a73e8] border-4 border-white shadow-sm z-10 pulse"></div>
+<div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-[#1a73e8] relative overflow-hidden">
+<div class="absolute top-0 right-0 w-16 h-16 bg-blue-50 -mr-8 -mt-8 rounded-full opacity-50"></div>
+<div class="flex justify-between items-start mb-3">
+<h4 class="text-sm font-bold text-gray-900">02 纪录片《长江文化》委托制作项目合同立项事宜</h4>
+<span class="bg-blue-100 text-[#1a73e8] text-[10px] px-1.5 py-0.5 rounded flex-none">进行中</span>
+</div>
+<div class="flex items-center gap-3 mb-4">
+<div class="flex-1 bg-gray-50 rounded-lg p-2 text-center">
+<p class="text-[10px] text-gray-400 mb-0.5">本项用时</p>
+<p class="text-lg font-mono font-black text-gray-800" id="issueTimer">12:35</p>
+</div>
+<div class="flex-1 bg-gray-50 rounded-lg p-2 text-center border-l border-gray-100">
+<p class="text-[10px] text-gray-400 mb-0.5">计划时长</p>
+<p class="text-lg font-mono font-black text-gray-400">20:00</p>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-1">
+<iconify-icon icon="mdi:pause"></iconify-icon>暂停
+                            </button>
+<button class="flex-1 bg-red-500 text-white py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-1" onclick="openConclusionModal('02')">
+<iconify-icon icon="mdi:stop"></iconify-icon>结束
+                            </button>
+</div>
+</div>
+</div>
+<!-- 待开始 03 -->
+<div class="relative pl-12">
+<div class="absolute left-5 top-5 w-4 h-4 rounded-full bg-gray-300 border-4 border-white shadow-sm z-10"></div>
+<div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-gray-300">
+<div class="flex justify-between items-start mb-2">
+<h4 class="text-sm font-bold text-gray-800">03 2023年度重大宣传项目经费预算审批</h4>
+<span class="bg-gray-100 text-gray-400 text-[10px] px-1.5 py-0.5 rounded flex-none">待开始</span>
+</div>
+<div class="flex items-center justify-between text-xs">
+<span class="text-gray-400">计划时长：20分钟</span>
+<button class="text-[#1a73e8] font-bold">开始本议题</button>
+</div>
+</div>
+</div>
+<!-- 待开始 04 -->
+<div class="relative pl-12">
+<div class="absolute left-5 top-5 w-4 h-4 rounded-full bg-gray-300 border-4 border-white shadow-sm z-10"></div>
+<div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-gray-300">
+<div class="flex justify-between items-start mb-2">
+<h4 class="text-sm font-bold text-gray-800 text-ellipsis overflow-hidden whitespace-nowrap">04 新媒体平台内容合作框架协议</h4>
+<span class="bg-gray-100 text-gray-400 text-[10px] px-1.5 py-0.5 rounded flex-none">待开始</span>
+</div>
+<div class="text-xs text-gray-400">计划时长：15分钟</div>
+</div>
+</div>
+<!-- 待开始 05 -->
+<div class="relative pl-12">
+<div class="absolute left-5 top-5 w-4 h-4 rounded-full bg-gray-300 border-4 border-white shadow-sm z-10"></div>
+<div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-gray-300">
+<div class="flex justify-between items-start mb-2">
+<h4 class="text-sm font-bold text-gray-800">05 电视剧《山河》采购项目立项</h4>
+<span class="bg-gray-100 text-gray-400 text-[10px] px-1.5 py-0.5 rounded flex-none">待开始</span>
+</div>
+<div class="text-xs text-gray-400">计划时长：25分钟</div>
+</div>
+</div>
+</section>
+</main>
+<!-- 底部固定操作栏 -->
+<footer class="bg-white border-t border-gray-100 p-4 flex-none">
+<div class="flex items-center justify-between mb-3 px-1">
+<span class="text-xs text-gray-400">签到状态</span>
+<span class="text-xs font-bold text-gray-700">已签到 <span class="text-[#1a73e8]">16</span> / 20 人</span>
+</div>
+<button class="w-full bg-[#1a73e8] text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-100">返回</button>
+</footer>
+<!-- 结论录入弹窗 -->
+<div class="modal-overlay" id="conclusionModal">
+<div class="modal-content">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-lg font-bold text-gray-800">记录结论</h3>
+<button class="text-gray-400" onclick="closeModal()">
+<iconify-icon icon="mdi:close" width="24"></iconify-icon>
+</button>
+</div>
+<div class="space-y-6">
+<div>
+<p class="text-sm font-bold text-gray-700 mb-3">快捷结论</p>
+<div class="grid grid-cols-2 gap-2">
+<button class="conclusion-btn active border-[#1a73e8] bg-blue-50 text-[#1a73e8] border py-2 rounded-lg text-sm font-medium">同意</button>
+<button class="conclusion-btn border-gray-200 text-gray-600 border py-2 rounded-lg text-sm font-medium">原则同意</button>
+<button class="conclusion-btn border-gray-200 text-gray-600 border py-2 rounded-lg text-sm font-medium">不同意</button>
+<button class="conclusion-btn border-gray-200 text-gray-600 border py-2 rounded-lg text-sm font-medium">需进一步论证</button>
+</div>
+</div>
+<div>
+<p class="text-sm font-bold text-gray-700 mb-3">详细结论说明</p>
+<textarea class="w-full h-32 bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#1a73e8] focus:border-transparent outline-none transition-all" placeholder="请输入具体会议结论及意见..."></textarea>
+</div>
+<div class="flex gap-3 pt-2">
+<button class="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold" onclick="closeModal()">取消</button>
+<button class="flex-1 py-3 bg-[#1a73e8] text-white rounded-xl font-bold shadow-lg shadow-blue-200" onclick="closeModal()">保存结论</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+        // 模拟计时器
+        let totalSeconds = 45 * 60 + 32;
+        let issueSeconds = 12 * 60 + 35;
+
+        function updateTimers() {
+            totalSeconds++;
+            issueSeconds++;
+            
+            document.getElementById('mainTimer').innerText = formatTime(totalSeconds);
+            document.getElementById('issueTimer').innerText = formatTimeSmall(issueSeconds);
+        }
+
+        function formatTime(s) {
+            const h = Math.floor(s / 3600).toString().padStart(2, '0');
+            const m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+            const sec = (s % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${sec}`;
+        }
+
+        function formatTimeSmall(s) {
+            const m = Math.floor(s / 60).toString().padStart(2, '0');
+            const sec = (s % 60).toString().padStart(2, '0');
+            return `${m}:${sec}`;
+        }
+
+        setInterval(updateTimers, 1000);
+
+        // 弹窗逻辑
+        function openConclusionModal(id) {
+            document.getElementById('conclusionModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('conclusionModal').classList.remove('active');
+        }
+
+        // 快捷结论选择效果
+        document.querySelectorAll('.conclusion-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.conclusion-btn').forEach(b => {
+                    b.classList.remove('active', 'border-[#1a73e8]', 'bg-blue-50', 'text-[#1a73e8]');
+                    b.classList.add('border-gray-200', 'text-gray-600');
+                });
+                this.classList.add('active', 'border-[#1a73e8]', 'bg-blue-50', 'text-[#1a73e8]');
+                this.classList.remove('border-gray-200', 'text-gray-600');
+            });
+        });
+    </script>
+</body>
+</html>

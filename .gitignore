@@ -1,0 +1,8 @@
+backend/target/
+frontend/node_modules/
+frontend/dist/
+frontend/.npm-cache/
+frontend/.pnpm-store/
+frontend/_tmp_*
+_tmp_*
+*.log

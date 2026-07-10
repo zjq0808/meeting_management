@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>创建会议 - 影视剧纪录片中心</title>
+<script src="https://modao.cc/agent-py/static/source/js/tailwindcss.js"></script>
+<script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.js"></script>
+<style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 2px; }
+    </style>
+</head>
+<body class="bg-[#f5f7fa] text-[#333] font-sans">
+<div class="flex flex-col min-h-screen">
+<!-- 顶部操作栏 -->
+<header class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-40">
+<div class="flex items-center gap-6">
+<a class="text-gray-400 hover:text-blue-600 transition-colors" href="meeting_list.html">
+<iconify-icon icon="ri:arrow-left-line" width="24"></iconify-icon>
+</a>
+<h1 class="text-lg font-bold">创建会议 / 排会</h1>
+<div class="flex border border-gray-200 rounded divide-x divide-gray-200 bg-gray-50 overflow-hidden">
+<div class="px-3 py-1 text-sm flex items-center gap-1 cursor-pointer hover:bg-white">
+<span class="font-bold">编辑版</span>
+<iconify-icon icon="ri:arrow-drop-down-line"></iconify-icon>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 shadow-sm transition-all active:scale-95">保存</button>
+<button class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 shadow-sm transition-all active:scale-95">发布</button>
+</div>
+</header>
+<main class="flex-1 flex p-6 gap-6 max-w-[1600px] mx-auto w-full">
+<!-- 左侧：会议基本信息 -->
+<div class="w-1/3 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col h-[calc(100vh-130px)]">
+<div class="px-6 py-4 border-b border-gray-100">
+<h2 class="font-bold flex items-center gap-2">
+<iconify-icon class="text-blue-600" icon="ri:file-info-line"></iconify-icon> 会议基本信息
+                    </h2>
+</div>
+<div class="p-6 overflow-y-auto custom-scrollbar flex-1">
+<div class="space-y-5">
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-1.5">
+<label class="text-sm font-medium text-gray-600">会议日期</label>
+<div class="relative">
+<input class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" type="date" value="2026-06-26"/>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="text-sm font-medium text-gray-600">会议时间</label>
+<div class="relative">
+<input class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" type="time" value="15:00"/>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="text-sm font-medium text-gray-600">会议期数</label>
+<input class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="如：20260601" type="text"/>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="text-sm font-medium text-gray-600">会议地点</label>
+<input class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" type="text" value="壹 08-047 会议室"/>
+</div>
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between items-center">
+<label class="text-sm font-medium text-gray-600">参会领导</label>
+<button class="text-xs text-blue-600 flex items-center gap-0.5 hover:underline" onclick="showModal('personModal')">
+<iconify-icon icon="ri:add-line"></iconify-icon> 添加
+                                </button>
+</div>
+<div class="min-h-[42px] border border-gray-300 rounded p-2 flex flex-wrap gap-2">
+<span class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs flex items-center gap-1">张三 <iconify-icon class="cursor-pointer" icon="ri:close-line"></iconify-icon></span>
+<span class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs flex items-center gap-1">李四 <iconify-icon class="cursor-pointer" icon="ri:close-line"></iconify-icon></span>
+<span class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs flex items-center gap-1">王五 <iconify-icon class="cursor-pointer" icon="ri:close-line"></iconify-icon></span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="text-sm font-medium text-gray-600">参会人员</label>
+<div class="flex items-center gap-2">
+<button class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 flex items-center gap-1.5 transition-colors" onclick="showModal('reporterModal')">
+<iconify-icon icon="ri:eye-line" width="16"></iconify-icon> 查看
+                                </button>
+<span class="text-xs text-gray-400">共3人</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="text-sm font-medium text-gray-600">会议内容</label>
+<textarea class="w-full border border-gray-300 rounded p-3 h-28 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="输入会议背景或主要内容..."></textarea>
+</div>
+</div>
+</div>
+</div>
+<!-- 右侧：参会议题信息 -->
+<div class="w-2/3 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col h-[calc(100vh-130px)]">
+<div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+<h2 class="font-bold flex items-center gap-2">
+<iconify-icon class="text-blue-600" icon="ri:list-unordered"></iconify-icon> 参会议题信息
+                    </h2>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar">
+<table class="w-full text-left text-sm border-collapse">
+<thead class="bg-gray-50 text-gray-500 font-medium sticky top-0">
+<tr>
+<th class="px-4 py-3 border-b">序号</th>
+<th class="px-4 py-3 border-b">议题名称</th>
+<th class="px-4 py-3 border-b">汇报部门<br/></th>
+<th class="px-4 py-3 border-b">参会部门</th>
+<th class="px-4 py-3 border-b text-center" style="padding: 12px 22px; margin: 0px; text-align: center;">操作</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-gray-100">
+<tr>
+<td class="px-4 py-4">01</td>
+<td class="px-4 py-4 font-medium">纪录片《丝绸之路》委托制作项目合同立项事宜</td>
+<td class="px-4 py-4">云数据中心运行部</td>
+<td class="px-4 py-4">参会部门</td>
+<td class="px-4 py-4 text-center">
+<div class="flex justify-center gap-3">
+<button class="text-gray-400 hover:text-blue-600"><iconify-icon icon="ri:arrow-up-line"></iconify-icon></button>
+<button class="text-gray-400 hover:text-blue-600"><iconify-icon icon="ri:arrow-down-line"></iconify-icon></button>
+<button class="text-gray-400 hover:text-red-500"><iconify-icon icon="ri:delete-bin-line"></iconify-icon></button>
+</div>
+</td>
+</tr>
+<tr>
+<td class="px-4 py-4">02</td>
+<td class="px-4 py-4 font-medium">纪录片《长江文化》委托制作项目合同立项事宜</td>
+<td class="px-4 py-4">综合部</td>
+<td class="px-4 py-4">参会部门</td>
+<td class="px-4 py-4 text-center">
+<div class="flex justify-center gap-3">
+<button class="text-gray-400 hover:text-blue-600"><iconify-icon icon="ri:arrow-up-line"></iconify-icon></button>
+<button class="text-gray-400 hover:text-blue-600"><iconify-icon icon="ri:arrow-down-line"></iconify-icon></button>
+<button class="text-gray-400 hover:text-red-500"><iconify-icon icon="ri:delete-bin-line"></iconify-icon></button>
+</div>
+</td>
+</tr>
+<tr>
+<td class="px-4 py-4">03</td>
+<td class="px-4 py-4 font-medium">2023年度重大宣传项目经费预算审批</td>
+<td class="px-4 py-4">综合部</td>
+<td class="px-4 py-4">参会部门</td>
+<td class="px-4 py-4 text-center">
+<div class="flex justify-center gap-3">
+<button class="text-gray-400 hover:text-blue-600"><iconify-icon icon="ri:arrow-up-line"></iconify-icon></button>
+<button class="text-gray-400 hover:text-blue-600"><iconify-icon icon="ri:arrow-down-line"></iconify-icon></button>
+<button class="text-gray-400 hover:text-red-500"><iconify-icon icon="ri:delete-bin-line"></iconify-icon></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="p-8 flex flex-col items-center justify-center text-gray-400 gap-4" id="empty-state" style="display: none;">
+<iconify-icon icon="ri:file-list-2-line" width="64"></iconify-icon>
+<p>暂无参会议题，请点击下方按钮添加</p>
+</div>
+</div>
+<div class="p-4 border-t border-gray-100 flex justify-center">
+<button class="bg-[#1a73e8] text-white px-8 py-2 rounded-full flex items-center gap-2 hover:bg-blue-700 shadow-md transition-all active:scale-95" onclick="showModal('topicModal')">
+<iconify-icon icon="ri:add-circle-line" width="20"></iconify-icon>
+<span>添加议题</span>
+</button>
+</div>
+</div>
+</main>
+</div>
+<!-- 选择联系人弹窗 -->
+<div class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4" id="personModal">
+<div class="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[600px] flex flex-col overflow-hidden">
+<div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+<h3 class="font-bold">选择联系人</h3>
+<button onclick="hideModal('personModal')"><iconify-icon icon="ri:close-line" width="24"></iconify-icon></button>
+</div>
+<div class="flex-1 flex overflow-hidden">
+<!-- 部门树 -->
+<div class="w-1/3 border-r border-gray-100 p-4 overflow-y-auto custom-scrollbar">
+<div class="mb-4 relative">
+<input class="w-full border rounded px-3 py-1.5 text-sm" placeholder="搜索部门..." type="text"/>
+<iconify-icon class="absolute right-3 top-2 text-gray-400" icon="ri:search-line"></iconify-icon>
+</div>
+<div class="space-y-2 text-sm">
+<div class="flex items-center gap-2 text-blue-600 font-medium">
+<iconify-icon icon="ri:folder-open-fill"></iconify-icon> 影视剧纪录片中心
+                        </div>
+<div class="pl-6 space-y-2">
+<div class="flex items-center gap-2 bg-blue-50 py-1 px-2 rounded cursor-pointer">
+<iconify-icon class="text-blue-400" icon="ri:folder-fill"></iconify-icon> 综合部
+                            </div>
+<div class="flex items-center gap-2 py-1 px-2 rounded cursor-pointer hover:bg-gray-50">
+<iconify-icon class="text-blue-400" icon="ri:folder-fill"></iconify-icon> 新媒体部
+                            </div>
+<div class="flex items-center gap-2 py-1 px-2 rounded cursor-pointer hover:bg-gray-50">
+<iconify-icon class="text-blue-400" icon="ri:folder-fill"></iconify-icon> 总编室
+                            </div>
+<div class="flex items-center gap-2 py-1 px-2 rounded cursor-pointer hover:bg-gray-50">
+<iconify-icon class="text-blue-400" icon="ri:folder-fill"></iconify-icon> 电视剧频道编辑部
+                            </div>
+</div>
+</div>
+</div>
+<!-- 联系人列表 -->
+<div class="w-2/3 p-4 flex flex-col">
+<div class="mb-4 flex items-center gap-2">
+<input class="flex-1 border rounded px-3 py-1.5 text-sm" placeholder="搜索联系人..." type="text"/>
+<iconify-icon class="text-gray-400 -ml-8" icon="ri:search-line"></iconify-icon>
+</div>
+<div class="flex items-center justify-between mb-3">
+<span class="text-sm font-medium text-gray-600">综合部 · 共 8 人</span>
+<div class="flex items-center gap-2">
+<button class="text-xs text-blue-600 flex items-center gap-0.5 hover:underline"><iconify-icon icon="ri:checkbox-circle-line"></iconify-icon> 全选</button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar space-y-1">
+<div class="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded cursor-pointer">
+<input class="accent-blue-600" type="checkbox"/>
+<div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-sm font-medium">张</div>
+<div>
+<p class="text-sm font-medium">张三</p>
+<p class="text-xs text-gray-400">zhangsan@tv.cn</p>
+</div>
+</div>
+<div class="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded cursor-pointer">
+<input class="accent-blue-600" type="checkbox"/>
+<div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-sm font-medium">李</div>
+<div>
+<p class="text-sm font-medium">李四</p>
+<p class="text-xs text-gray-400">lisi@tv.cn</p>
+</div>
+</div>
+<div class="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded cursor-pointer">
+<input class="accent-blue-600" type="checkbox"/>
+<div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-sm font-medium">王</div>
+<div>
+<p class="text-sm font-medium">王五</p>
+<p class="text-xs text-gray-400">wangwu@tv.cn</p>
+</div>
+</div>
+<div class="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded cursor-pointer">
+<input class="accent-blue-600" type="checkbox"/>
+<div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-sm font-medium">赵</div>
+<div>
+<p class="text-sm font-medium">赵六</p>
+<p class="text-xs text-gray-400">zhaoliu@tv.cn</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="px-6 py-3 border-t border-gray-100 flex justify-end gap-3">
+<button class="px-4 py-1.5 border border-gray-300 rounded text-sm hover:bg-gray-50" onclick="hideModal('personModal')">取消</button>
+<button class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700" onclick="hideModal('personModal')">确认</button>
+</div>
+</div>
+</div>
+<!-- 汇报人选择弹窗 -->
+<div class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4" id="reporterModal">
+<div class="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[600px] flex flex-col overflow-hidden">
+<div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+<h3 class="font-bold">选择汇报人</h3>
+<button onclick="hideModal('reporterModal')"><iconify-icon icon="ri:close-line" width="24"></iconify-icon></button>
+</div>
+<div class="flex-1 flex overflow-hidden">
+<div class="w-1/3 border-r border-gray-100 p-4 overflow-y-auto custom-scrollbar">
+<div class="mb-4 relative">
+<input class="w-full border rounded px-3 py-1.5 text-sm" placeholder="搜索部门..." type="text"/>
+<iconify-icon class="absolute right-3 top-2 text-gray-400" icon="ri:search-line"></iconify-icon>
+</div>
+<div class="space-y-2 text-sm">
+<div class="flex items-center gap-2 text-blue-600 font-medium">
+<iconify-icon icon="ri:folder-open-fill"></iconify-icon> 影视剧纪录片中心
+                        </div>
+<div class="pl-6 space-y-2">
+<div class="flex items-center gap-2 bg-blue-50 py-1 px-2 rounded cursor-pointer"><iconify-icon class="text-blue-400" icon="ri:folder-fill"></iconify-icon> 综合部</div>
+<div class="flex items-center gap-2 py-1 px-2 rounded cursor-pointer hover:bg-gray-50"><iconify-icon class="text-blue-400" icon="ri:folder-fill"></iconify-icon> 新媒体部</div>
+<div class="flex items-center gap-2 py-1 px-2 rounded cursor-pointer hover:bg-gray-50"><iconify-icon class="text-blue-400" icon="ri:folder-fill"></iconify-icon> 总编室</div>
+</div>
+</div>
+</div>
+<div class="w-2/3 p-4 flex flex-col">
+<div class="mb-4 flex items-center gap-2">
+<input class="flex-1 border rounded px-3 py-1.5 text-sm" placeholder="搜索联系人..." type="text"/>
+<iconify-icon class="text-gray-400 -ml-8" icon="ri:search-line"></iconify-icon>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar space-y-1">
+<div class="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded cursor-pointer">
+<input checked="" class="accent-blue-600" type="checkbox"/>
+<div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-sm font-medium">张</div>
+<div><p class="text-sm font-medium">张三</p><p class="text-xs text-gray-400">zhangsan@tv.cn</p></div>
+</div>
+<div class="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded cursor-pointer">
+<input class="accent-blue-600" type="checkbox"/>
+<div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-sm font-medium">李</div>
+<div><p class="text-sm font-medium">李四</p><p class="text-xs text-gray-400">lisi@tv.cn</p></div>
+</div>
+<div class="flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded cursor-pointer">
+<input class="accent-blue-600" type="checkbox"/>
+<div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-sm font-medium">王</div>
+<div><p class="text-sm font-medium">王五</p><p class="text-xs text-gray-400">wangwu@tv.cn</p></div>
+</div>
+</div>
+</div>
+</div>
+<div class="px-6 py-3 border-t border-gray-100 flex justify-end gap-3">
+<button class="px-4 py-1.5 border border-gray-300 rounded text-sm hover:bg-gray-50" onclick="hideModal('reporterModal')">取消</button>
+<button class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700" onclick="hideModal('reporterModal')">确认</button>
+</div>
+</div>
+</div>
+<!-- 添加议题弹窗 -->
+<div class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4" id="topicModal">
+<div class="bg-white rounded-lg shadow-xl w-full max-w-2xl flex flex-col overflow-hidden">
+<div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+<h3 class="font-bold">添加议题</h3>
+<button onclick="hideModal('topicModal')"><iconify-icon icon="ri:close-line" width="24"></iconify-icon></button>
+</div>
+<div class="p-6 space-y-4">
+<div class="flex flex-col gap-1.5">
+<label class="text-sm font-medium text-gray-600">议题名称</label>
+<input class="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="请输入议题名称" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-1.5">
+<label class="text-sm font-medium text-gray-600">申报部门</label>
+<select class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+<option>请选择部门</option>
+<option>综合部</option>
+<option>新媒体部</option>
+<option>总编室</option>
+<option>电视剧频道编辑部</option>
+</select>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="text-sm font-medium text-gray-600">申报人</label>
+<select class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+<option>请选择申报人</option>
+<option>张三</option>
+<option>李四</option>
+<option>王五</option>
+</select>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="text-sm font-medium text-gray-600">议题内容</label>
+<textarea class="w-full border border-gray-300 rounded p-3 h-24 text-sm resize-none" placeholder="请输入议题内容"></textarea>
+</div>
+</div>
+<div class="px-6 py-3 border-t border-gray-100 flex justify-end gap-3">
+<button class="px-4 py-1.5 border border-gray-300 rounded text-sm hover:bg-gray-50" onclick="hideModal('topicModal')">取消</button>
+<button class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700" onclick="hideModal('topicModal'); addTopic()">确认添加</button>
+</div>
+</div>
+</div>
+<script>
+function showModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+}
+function hideModal(id) {
+    document.getElementById(id).classList.add('hidden');
+}
+function addTopic() {
+    hideModal('topicModal');
+}
+</script>
+</body></html>

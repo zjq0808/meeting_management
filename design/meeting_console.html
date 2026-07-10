@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>会议控制台 - 影视剧纪录片中心</title>
+<script src="https://modao.cc/agent-py/static/source/js/tailwindcss.js"></script>
+<script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.js"></script>
+<style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .pulse-dot { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+    </style>
+</head>
+<body class="bg-[#f5f7fa] text-[#333] font-sans h-screen overflow-hidden flex">
+<!-- 左侧导航栏 -->
+<aside class="w-16 bg-white border-r border-gray-200 flex flex-col items-center py-4 gap-6 shrink-0">
+<div class="w-10 h-10 bg-yellow-400 rounded-md flex items-center justify-center text-white mb-2">
+<iconify-icon icon="ri:user-fill" width="24"></iconify-icon>
+</div>
+<nav class="flex flex-col gap-6">
+<a class="text-gray-400 hover:text-blue-600 transition-colors" href="#"><iconify-icon icon="ri:message-3-line" width="24"></iconify-icon></a>
+<a class="text-gray-400 hover:text-blue-600 transition-colors" href="#"><iconify-icon icon="ri:organization-chart" width="24"></iconify-icon></a>
+<a class="text-blue-600" href="meeting_list.html"><iconify-icon icon="ri:grid-fill" width="24"></iconify-icon></a>
+<a class="text-gray-400 hover:text-blue-600 transition-colors" href="#"><iconify-icon icon="ri:box-3-line" width="24"></iconify-icon></a>
+<a class="text-gray-400 hover:text-blue-600 transition-colors" href="#"><iconify-icon icon="ri:calendar-todo-line" width="24"></iconify-icon></a>
+<a class="text-gray-400 hover:text-blue-600 transition-colors" href="#"><iconify-icon icon="ri:more-line" width="24"></iconify-icon></a>
+</nav>
+</aside>
+<div class="flex-1 flex flex-col overflow-hidden">
+<!-- 顶部横幅区 -->
+<header class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<a class="text-gray-400 hover:text-blue-600 transition-colors" href="meeting_list.html"><iconify-icon icon="ri:arrow-left-s-line" width="24"></iconify-icon></a>
+<div class="flex flex-col">
+<div class="flex items-center gap-3">
+<h1 class="text-lg font-bold text-[#333]">2026-06-26 第一期 三重一大会议</h1>
+<span class="px-2.5 py-0.5 bg-blue-50 text-blue-600 text-xs font-medium rounded-full border border-blue-200">进行中</span>
+</div>
+<div class="flex items-center gap-2 text-xs text-gray-500 mt-1">
+<span class="flex items-center gap-1"><iconify-icon class="text-gray-400" icon="ri:map-pin-2-line"></iconify-icon> 壹 08-047 会议室</span>
+<span>|</span>
+<span class="flex items-center gap-1"><iconify-icon class="text-gray-400" icon="ri:user-3-line"></iconify-icon> 主持人：张三</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex flex-col items-end">
+<span class="text-xs text-gray-400">会议总计时</span>
+<span class="text-2xl font-mono text-blue-600" id="total-timer">00:46:07</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="relative">
+<button class="px-3 py-1.5 bg-white border border-gray-300 rounded text-sm text-[#333] flex items-center gap-1 hover:bg-gray-50 transition-colors">
+                            编辑版 <iconify-icon icon="ri:arrow-down-s-line" width="16"></iconify-icon>
+</button>
+</div>
+<a class="px-3 py-1.5 bg-white border border-gray-300 rounded text-sm text-[#333] hover:bg-gray-50 transition-colors" href="meeting_list.html">返回</a>
+</div>
+</div>
+</header>
+<div class="flex-1 flex overflow-hidden">
+<!-- 左侧：议题面板 -->
+<aside class="w-80 border-r border-gray-200 flex flex-col bg-white">
+<div class="p-4 border-b border-gray-100">
+<h2 class="text-sm font-bold text-[#666] flex items-center justify-between">
+                        议题列表
+                        <span class="text-xs font-normal text-gray-400">2 / 5</span>
+</h2>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
+<!-- 议题项 1: 已结束 -->
+<div class="p-3 bg-green-50 border-l-4 border-green-500 rounded-r-lg opacity-70">
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-medium">已结束</span>
+<span class="text-[10px] text-gray-500 font-mono">用时 18:32</span>
+</div>
+<h3 class="text-sm font-medium text-[#333]">01 制作中心2026年度办公设备采购审批</h3>
+</div>
+<!-- 议题项 2: 进行中 -->
+<div class="p-3 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg relative ring-1 ring-blue-200">
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1 font-medium">
+<span class="w-1.5 h-1.5 bg-white rounded-full pulse-dot"></span> 进行中
+                            </span>
+<span class="text-[10px] text-blue-600 font-mono">倒计时 07:28</span>
+</div>
+<h3 class="text-sm font-bold text-[#333]">02 纪录片《丝绸之路》委托制作项目合同立项事宜</h3>
+<div class="mt-3 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 w-2/3 rounded-full"></div>
+</div>
+</div>
+<!-- 议题项 3: 待开始 -->
+<div class="p-3 bg-white border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">待开始</span>
+<span class="text-[10px] text-gray-400 font-mono">预计 40:00</span>
+</div>
+<h3 class="text-sm font-medium text-gray-600">03 2023年度重大宣传项目经费预算审批</h3>
+</div>
+<!-- 更多议题占位 -->
+<div class="p-3 bg-white border border-gray-200 rounded-lg opacity-50">
+<h3 class="text-sm font-medium text-gray-400 italic">04 新媒体平台内容合作框架协议</h3>
+</div>
+</div>
+<div class="p-4 bg-gray-50 border-t border-gray-200">
+<div class="flex justify-between text-xs text-gray-500 mb-2">
+<span>签到进度</span>
+<span class="text-blue-600 font-medium">16 / 20 人</span>
+</div>
+<div class="h-1.5 bg-gray-200 rounded-full overflow-hidden mb-3">
+<div class="h-full bg-blue-500 w-[80%] rounded-full"></div>
+</div>
+<a class="w-full py-2 bg-white border border-gray-200 hover:bg-gray-100 rounded-lg text-xs flex items-center justify-center gap-2 transition-colors text-[#333]" href="signin_dashboard.html">
+<iconify-icon class="text-blue-500" icon="ri:bar-chart-box-line"></iconify-icon> 签到详情
+                    </a>
+</div>
+</aside>
+<!-- 右侧：主控区域 -->
+<main class="flex-1 flex flex-col bg-[#f5f7fa] p-8 overflow-y-auto custom-scrollbar">
+<div class="flex-1 flex flex-col max-w-5xl mx-auto w-full">
+<!-- 当前议题详情 -->
+<div class="mb-8">
+<div class="flex items-center gap-3 mb-4">
+</div>
+<h2 class="text-3xl font-bold text-[#333] leading-tight mb-6">纪录片《丝绸之路》委托制作项目合同立项事宜</h2>
+<div class="grid grid-cols-3 gap-5">
+<div class="bg-white shadow-sm rounded-lg border border-gray-200 p-4">
+<span class="text-xs text-gray-500 block mb-2">汇报部门</span>
+<div class="flex items-center gap-3">
+<span class="text-lg font-medium text-[#333]">云数据中心运行部</span>
+</div>
+</div>
+<div class="bg-white shadow-sm rounded-lg border border-gray-200 p-4">
+<span class="text-xs text-gray-500 block mb-2">计划时长</span>
+<div class="flex items-center gap-3">
+<iconify-icon class="text-gray-400" icon="ri:time-line" width="24"></iconify-icon>
+<span class="text-2xl font-mono text-[#333]">20:00</span>
+</div>
+</div>
+<div class="bg-white shadow-sm rounded-lg border border-gray-200 p-4">
+<span class="text-xs text-gray-500 block mb-2">已用时长</span>
+<div class="flex items-center gap-3">
+<iconify-icon class="text-blue-600" icon="ri:timer-flash-line" width="24"></iconify-icon>
+<span class="text-2xl font-mono text-blue-600" id="topic-timer">00:13:10</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 结论录入 -->
+<div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6 mb-8">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-bold text-[#333] flex items-center gap-2">
+<iconify-icon class="text-blue-600" icon="ri:edit-box-line"></iconify-icon> 结论录入
+                            </h3>
+<div class="flex gap-2">
+<button class="px-3 py-1 bg-white border border-gray-200 text-green-600 rounded text-xs hover:bg-green-50 hover:border-green-300 transition-all font-medium" onclick="setConclusion('同意')">同意</button>
+<button class="px-3 py-1 bg-white border border-gray-200 text-blue-600 rounded text-xs hover:bg-blue-50 hover:border-blue-300 transition-all font-medium" onclick="setConclusion('原则同意')">原则同意</button>
+<button class="px-3 py-1 bg-white border border-gray-200 text-red-600 rounded text-xs hover:bg-red-50 hover:border-red-300 transition-all font-medium" onclick="setConclusion('不同意')">不同意</button>
+<button class="px-3 py-1 bg-white border border-gray-200 text-orange-600 rounded text-xs hover:bg-orange-50 hover:border-orange-300 transition-all font-medium" onclick="setConclusion('进一步论证')">进一步论证</button>
+</div>
+</div>
+<textarea class="bg-white border border-gray-200 rounded-lg p-4 h-36 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none placeholder-gray-400 text-[#333] w-full" id="conclusion-box" placeholder="点击上方快捷按钮或在此输入详细结论..."></textarea>
+</div>
+<!-- 控制按钮组 -->
+<div class="flex gap-4 justify-center">
+<button class="flex-1 py-3 bg-white border border-gray-300 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition-all text-[#666]">
+<iconify-icon icon="ri:pause-fill" width="22"></iconify-icon> 暂停讨论
+                        </button>
+<button class="flex-[2] py-3.5 bg-blue-600 rounded-xl font-bold text-lg flex items-center justify-center gap-3 hover:bg-blue-700 shadow-lg shadow-blue-200 active:scale-95 transition-all text-white" onclick="showModal('finishModal')">
+<iconify-icon icon="ri:checkbox-circle-fill" width="24"></iconify-icon> 结束并录入结论
+                        </button>
+</div>
+</div>
+</main>
+</div>
+</div>
+<!-- 确认结束弹窗 -->
+<div class="fixed inset-0 bg-black/40 hidden flex items-center justify-center z-50 p-4" id="finishModal">
+<div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+<div class="p-8 text-center">
+<div class="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+<iconify-icon icon="ri:question-answer-line" width="48"></iconify-icon>
+</div>
+<h3 class="text-xl font-bold text-[#333] mb-3">结束当前议题讨论？</h3>
+<p class="text-gray-500 text-sm mb-8 leading-relaxed">
+                    系统将记录本次议题的实际用时为 <span class="text-blue-600 font-bold font-mono">12:35</span>，并自动跳转至下一个议题。请确认结论已完整录入。
+                </p>
+<div class="flex gap-4">
+<button class="flex-1 px-6 py-3 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors text-[#333] font-medium" onclick="hideModal('finishModal')">取消</button>
+<button class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors" onclick="hideModal('finishModal')">确认并继续</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+        function setConclusion(val) {
+            document.getElementById('conclusion-box').value = "会议结论：" + val + "\n备注：";
+        }
+        function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function hideModal(id) { document.getElementById(id).classList.add('hidden'); }
+        
+        // 简单计时器演示
+        let totalSecs = 2732;
+        let topicSecs = 755;
+        setInterval(() => {
+            totalSecs++;
+            topicSecs++;
+            document.getElementById('total-timer').innerText = formatTime(totalSecs);
+            document.getElementById('topic-timer').innerText = formatTime(topicSecs);
+        }, 1000);
+        
+        function formatTime(s) {
+            const h = Math.floor(s / 3600).toString().padStart(2, '0');
+            const m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+            const sec = (s % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${sec}`;
+        }
+    </script>
+</body></html>
