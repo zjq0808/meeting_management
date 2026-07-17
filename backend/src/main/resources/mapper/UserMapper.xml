@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.meeting.mapper.UserMapper">
+    <select id="findByLogin" resultType="map">
+        select
+        <include refid="com.example.meeting.mapper.JoinSqlFragments.UserSelectColumns"/>
+        from t_wxdept_users u
+        <include refid="com.example.meeting.mapper.JoinSqlFragments.UserDepartmentAuthorityJoin"/>
+        where (u.f_user_id = #{login} or u.f_user_name = #{login})
+          and (u.f_enable is null or u.f_enable != '0')
+        limit 1
+    </select>
+
+    <select id="findById" resultType="map">
+        select
+        <include refid="com.example.meeting.mapper.JoinSqlFragments.UserSelectColumns"/>
+        from t_wxdept_users u
+        <include refid="com.example.meeting.mapper.JoinSqlFragments.UserDepartmentAuthorityJoin"/>
+        where u.f_user_id = #{id}
+    </select>
+
+    <select id="listUsers" resultType="map">
+        select
+        <include refid="com.example.meeting.mapper.JoinSqlFragments.UserSelectColumns"/>
+        from t_wxdept_users u
+        <include refid="com.example.meeting.mapper.JoinSqlFragments.UserDepartmentAuthorityJoin"/>
+        where (u.f_enable is null or u.f_enable != '0')
+        <if test="departmentId != null and departmentId != ''">
+            and u.f_dept_id = #{departmentId}
+        </if>
+        <if test="authority != null">
+            and a.authority_value = #{authority}
+        </if>
+        <if test="participantOnly != null and participantOnly">
+            and a.authority_value is null
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (u.f_user_name like concat('%', #{keyword}, '%') or u.f_user_id like concat('%', #{keyword}, '%'))
+        </if>
+        order by d.f_order_index, u.f_user_name
+    </select>
+
+    <select id="listDepartments" resultType="map">
+        select
+            f_dept_id as id,
+            f_dept_id as dept_id,
+            f_dept_nm as name,
+            f_parent_dept_id as parent_id,
+            f_order_index as sort_no
+        from t_wxdept
+        order by f_order_index, f_dept_id
+    </select>
+
+    <select id="findSecretaryByDepartment" resultType="map">
+        select
+        <include refid="com.example.meeting.mapper.JoinSqlFragments.UserSelectColumns"/>
+        from t_meeting_authority ma
+        join t_wxdept_users u on u.f_user_id = ma.user_id
+        <include refid="com.example.meeting.mapper.JoinSqlFragments.UserDepartmentAuthorityJoin"/>
+        where ma.dept_id = #{departmentId}
+          and ma.authority = 3
+          and ma.group_code = #{groupCode}
+        order by ma.id
+        limit 1
+    </select>
+</mapper>

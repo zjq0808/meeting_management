@@ -1,0 +1,457 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.meeting.mapper.MeetingMapper">
+    <insert id="insertMeeting" useGeneratedKeys="true" keyProperty="id">
+        insert into t_meeting_main(meeting_date, meeting_time, period_no, location, leaders, content, status, creater, created_time, updated_time)
+        values(#{meetingDate}, #{meetingTime}, #{periodNo}, #{location}, #{leaders}, #{content}, 'DRAFT', #{createdBy}, now(), now())
+    </insert>
+
+    <update id="updateMeeting">
+        update t_meeting_main
+        set meeting_date = #{meetingDate},
+            meeting_time = #{meetingTime},
+            period_no = #{periodNo},
+            location = #{location},
+            leaders = #{leaders},
+            content = #{content},
+            updated_time = now()
+        where id = #{id}
+    </update>
+
+    <select id="findMeeting" resultType="map">
+        select <include refid="com.example.meeting.mapper.JoinSqlFragments.MeetingBaseColumns"/>
+        from t_meeting_main
+        where id = #{id}
+    </select>
+
+    <select id="listMeetings" resultType="map">
+        select
+            <include refid="com.example.meeting.mapper.JoinSqlFragments.MeetingBaseColumns"/>,
+            (select count(1) from t_meeting_topic tt where tt.meeting_id = t_meeting_main.id) as topicCount
+        from t_meeting_main
+        order by meeting_date desc, id desc
+    </select>
+
+    <select id="listMeetingsForUser" resultType="map">
+        select distinct
+            <include refid="com.example.meeting.mapper.JoinSqlFragments.MeetingBaseColumnsWithAlias">
+                <property name="alias" value="m"/>
+            </include>,
+            (select count(1) from t_meeting_topic tt where tt.meeting_id = m.id) as topicCount
+        from t_meeting_main m
+        left join t_meeting_topic t on t.meeting_id = m.id
+        left join t_meeting_attendee ca on ca.meeting_id = m.id and ca.user_id = #{userId} and ca.confirm_status = 'CONFIRMED'
+        where m.status != 'DRAFT'
+          and (
+            m.creater = #{userId}
+            or ca.user_id is not null
+            or (
+              #{role} = 'SECRETARY'
+              and (
+                (concat(',', ifnull(t.report_dept_id, ''), ',') like concat('%,', #{departmentId}, ',%'))
+                or (concat(',', ifnull(t.participant_dept_id, ''), ',') like concat('%,', #{departmentId}, ',%'))
+              )
+            )
+            or exists (
+              select 1
+              from t_meeting_notification n
+              where n.meeting_id = m.id
+                and n.tousers like concat('%', #{userId}, '%')
+                and n.title = '会议议题分享通知'
+            )
+          )
+        order by m.meeting_date desc, m.id desc
+    </select>
+
+    <update id="updateMeetingStatus">
+        update t_meeting_main
+        set status = #{status}, updated_time = now()
+        where id = #{id}
+    </update>
+
+    <insert id="insertTopic" useGeneratedKeys="true" keyProperty="id">
+        insert into t_meeting_topic(
+            meeting_id, topic_type, title, report_dept_id, report_dept_name,
+            participant_dept_id, participant_dept_name, summary, conclusion, notice,
+            project_code, sort_no, status, report_dept_signed, created_at, updated_at
+        )
+        values(
+            #{meetingId}, #{topicType}, #{title}, #{reportDepartmentId}, #{reportDepartmentName},
+            #{participantDeptId}, #{participantDepartments}, #{summary}, #{conclusion}, #{notice},
+            #{projectCode}, #{sortNo}, 'WAITING', 0, now(), now()
+        )
+    </insert>
+
+    <update id="updateTopic">
+        update t_meeting_topic
+        set topic_type = #{topicType},
+            title = #{title},
+            report_dept_id = #{reportDepartmentId},
+            report_dept_name = #{reportDepartmentName},
+            participant_dept_id = #{participantDeptId},
+            participant_dept_name = #{participantDepartments},
+            summary = #{summary},
+            conclusion = #{conclusion},
+            notice = #{notice},
+            project_code = #{projectCode},
+            sort_no = #{sortNo},
+            updated_at = now()
+        where id = #{id}
+    </update>
+
+    <update id="updateTopicDetails">
+        update t_meeting_topic
+        set title = #{title},
+            topic_type = #{topicType},
+            summary = #{summary},
+            conclusion = #{conclusion},
+            updated_at = now()
+        where id = #{id}
+    </update>
+
+    <update id="updateConclusion">
+        update t_meeting_topic
+        set conclusion = #{conclusion},
+            actual_minutes = #{actualMinutes},
+            updated_at = now()
+        where id = #{id}
+    </update>
+
+    <select id="findTopic" resultType="map">
+        select
+        <include refid="com.example.meeting.mapper.JoinSqlFragments.TopicBaseColumnsWithAlias">
+            <property name="alias" value="t_meeting_topic"/>
+        </include>
+        from t_meeting_topic
+        where id = #{id}
+    </select>
+
+    <select id="listTopics" resultType="map">
+        select
+        <include refid="com.example.meeting.mapper.JoinSqlFragments.TopicBaseColumnsWithAlias">
+            <property name="alias" value="t_meeting_topic"/>
+        </include>
+        from t_meeting_topic
+        where meeting_id = #{meetingId}
+        order by sort_no, id
+    </select>
+
+    <delete id="deleteTopicsNotIn">
+        delete from t_meeting_topic
+        where meeting_id = #{meetingId}
+        <if test="ids != null and ids.size > 0">
+            and id not in
+            <foreach collection="ids" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+    </delete>
+
+    <update id="updateTopicProgress">
+        update t_meeting_topic
+        set status = #{status},
+            start_time = #{startTime},
+            end_time = #{endTime},
+            actual_minutes = #{actualMinutes},
+            updated_at = now()
+        where id = #{id}
+    </update>
+
+    <update id="markReportDepartmentSigned">
+        update t_meeting_topic
+        set report_dept_signed = 1,
+            updated_at = now()
+        where id = #{id}
+    </update>
+
+    <select id="findRunningTopic" resultType="map">
+        select
+        <include refid="com.example.meeting.mapper.JoinSqlFragments.TopicBaseColumnsWithAlias">
+            <property name="alias" value="t_meeting_topic"/>
+        </include>
+        from t_meeting_topic
+        where meeting_id = #{meetingId}
+          and status = 'RUNNING'
+        limit 1
+    </select>
+
+    <select id="listSecretaryTasks" resultType="map">
+        select
+        <include refid="com.example.meeting.mapper.JoinSqlFragments.TopicBaseColumnsWithAlias">
+            <property name="alias" value="t_meeting_topic"/>
+        </include>
+        from t_meeting_topic
+        where meeting_id = #{meetingId}
+          and (
+            concat(',', ifnull(report_dept_id, ''), ',') like concat('%,', #{departmentId}, ',%')
+            or concat(',', ifnull(participant_dept_id, ''), ',') like concat('%,', #{departmentId}, ',%')
+          )
+        order by sort_no
+    </select>
+
+    <insert id="insertAttendee">
+        insert into t_meeting_attendee(
+            meeting_id, topic_id, user_id, user_name, attendee_type,
+            selected_by, selected_source, selected_dept_id, created_at, sign_status,
+            confirm_status, confirmed_by, confirmed_at
+        )
+        values(
+            #{meetingId}, #{topicId}, #{userId}, #{userName}, #{attendeeType},
+            #{selectedBy}, #{selectedSource}, #{selectedDeptId}, now(), 'UNSIGNED',
+            #{confirmStatus}, #{confirmedBy}, #{confirmedAt}
+        )
+    </insert>
+
+    <delete id="deleteAttendeesBySubmitter">
+        delete from t_meeting_attendee
+        where topic_id = #{topicId}
+          and attendee_type = #{attendeeType}
+          and selected_by = #{selectedBy}
+    </delete>
+
+    <delete id="deleteAttendee">
+        delete from t_meeting_attendee
+        where id = #{id}
+    </delete>
+
+    <select id="countAttendees" resultType="int">
+        select count(1)
+        from t_meeting_attendee
+        where topic_id = #{topicId}
+    </select>
+
+    <select id="listTopicAttendees" resultType="map">
+        select
+            a.*,
+            a.user_id as employee_no,
+            a.user_name as username,
+            a.user_name as real_name,
+            u.f_dept_id as department_id,
+            d.f_dept_nm as department_name
+        from t_meeting_attendee a
+        <include refid="com.example.meeting.mapper.JoinSqlFragments.AttendeeUserDepartmentJoin"/>
+        where a.topic_id = #{topicId}
+        order by a.attendee_type, a.user_name
+    </select>
+
+    <select id="listAttendeesSelectedBy" resultType="map">
+        select distinct
+            a.id as id,
+            a.meeting_id as meetingId,
+            a.topic_id as topicId,
+            a.user_id as userId,
+            a.user_name as userName,
+            a.attendee_type as attendeeType,
+            a.selected_by as selectedBy,
+            a.selected_source as selectedSource,
+            a.selected_dept_id as selectedDeptId,
+            a.confirm_status as confirmStatus,
+            t.title as topicTitle,
+            t.sort_no as sortNo,
+            t.topic_type as topicType,
+            t.report_dept_id as reportDepartmentId,
+            t.report_dept_name as reportDepartmentName,
+            t.participant_dept_id as participantDeptId,
+            t.participant_dept_name as participantDepartments,
+            t.summary,
+            t.notice,
+            t.project_code as projectCode,
+            t.status,
+            t.start_time as startTime,
+            t.end_time as endTime,
+            t.actual_minutes as actualMinutes,
+            t.conclusion,
+            t.report_dept_signed as reportDepartmentSigned,
+            t.created_at as createdAt,
+            t.updated_at as updatedAt
+        from t_meeting_topic t
+        join t_meeting_attendee a on a.topic_id = t.id
+        where t.meeting_id = #{meetingId}
+          and a.selected_by = #{selectedBy}
+          and a.confirm_status = 'PENDING'
+        order by sortNo, topicId
+    </select>
+
+    <select id="isTopicAttendeeByType" resultType="int">
+        select count(1)
+        from t_meeting_attendee
+        where topic_id = #{topicId}
+          and user_id = #{userId}
+          and attendee_type = #{attendeeType}
+    </select>
+
+    <select id="listLeaderTasks" resultType="map">
+        select distinct
+        <include refid="com.example.meeting.mapper.JoinSqlFragments.TopicBaseColumnsWithAlias">
+            <property name="alias" value="t"/>
+        </include>
+        from t_meeting_topic t
+        join t_meeting_attendee a on a.topic_id = t.id
+        where t.meeting_id = #{meetingId}
+          and a.user_id = #{userId}
+          and a.attendee_type = 'LEADER'
+          and a.confirm_status = 'CONFIRMED'
+        order by t.sort_no, t.id
+    </select>
+
+    <select id="listSharedTasks" resultType="map">
+        select distinct
+        <include refid="com.example.meeting.mapper.JoinSqlFragments.TopicBaseColumnsWithAlias">
+            <property name="alias" value="t"/>
+        </include>
+        from t_meeting_topic t
+        join t_meeting_notification n on n.topic_id = t.id and n.meeting_id = t.meeting_id
+        where t.meeting_id = #{meetingId}
+          and n.tousers like concat('%', #{userId}, '%')
+          and n.title = '会议议题分享通知'
+        order by t.sort_no, t.id
+    </select>
+
+    <select id="listMeetingAttendees" resultType="map">
+        select distinct
+            a.user_id as id,
+            a.user_id as user_id,
+            a.user_id as employee_no,
+            a.user_name as username,
+            a.user_name as real_name,
+            u.f_dept_id as department_id,
+            d.f_dept_nm as department_name,
+            u.f_phone as mobile
+        from t_meeting_attendee a
+        <include refid="com.example.meeting.mapper.JoinSqlFragments.AttendeeUserDepartmentJoin"/>
+        where a.meeting_id = #{meetingId}
+        order by d.f_dept_nm, a.user_name
+    </select>
+
+    <select id="listPendingAttendeesForDepartment" resultType="map">
+        select
+            a.*,
+            a.user_id as employee_no,
+            a.user_name as username,
+            a.user_name as real_name,
+            u.f_dept_id as department_id,
+            d.f_dept_nm as department_name,
+            t.title as topic_title,
+            t.sort_no as sort_no
+        from t_meeting_attendee a
+        <include refid="com.example.meeting.mapper.JoinSqlFragments.AttendeeUserDepartmentJoin"/>
+        join t_meeting_topic t on t.id = a.topic_id
+        where a.meeting_id = #{meetingId}
+          and a.selected_source = 'DEPARTMENT'
+          and a.selected_dept_id = #{departmentId}
+          and a.confirm_status = 'PENDING'
+        order by t.sort_no, a.attendee_type, a.user_name
+    </select>
+
+    <select id="isTopicAttendee" resultType="int">
+        select count(1)
+        from t_meeting_attendee
+        where topic_id = #{topicId}
+          and user_id = #{userId}
+    </select>
+
+    <select id="listUnsignedAttendeesForUser" resultType="map">
+        select a.*
+        from t_meeting_attendee a
+        where a.meeting_id = #{meetingId}
+          and a.user_id = #{userId}
+          and a.sign_status = 'UNSIGNED'
+          and a.confirm_status = 'CONFIRMED'
+        order by a.topic_id
+    </select>
+
+    <select id="listSignTopicsForUser" resultType="map">
+        select
+            a.id as attendeeId,
+            a.meeting_id as meetingId,
+            a.topic_id as topicId,
+            a.user_id as userId,
+            a.user_name as userName,
+            a.attendee_type as attendeeType,
+            a.sign_status as signStatus,
+            a.signed_at as signedAt,
+            t.id,
+            t.topic_type as topicType,
+            t.title,
+            t.report_dept_id as reportDepartmentId,
+            t.report_dept_name as reportDepartmentName,
+            t.participant_dept_id as participantDeptId,
+            t.participant_dept_name as participantDepartments,
+            t.summary,
+            t.notice,
+            t.project_code as projectCode,
+            t.sort_no as sortNo,
+            t.status,
+            t.start_time as startTime,
+            t.end_time as endTime,
+            t.actual_minutes as actualMinutes,
+            t.conclusion,
+            t.report_dept_signed as reportDepartmentSigned
+        from t_meeting_attendee a
+        join t_meeting_topic t on t.id = a.topic_id
+        where a.meeting_id = #{meetingId}
+          and a.user_id = #{userId}
+          and a.confirm_status = 'CONFIRMED'
+        order by t.sort_no, t.id
+    </select>
+
+    <update id="markAttendeeConfirmed">
+        update t_meeting_attendee
+        set confirm_status = 'CONFIRMED',
+            confirmed_by = #{confirmedBy},
+            confirmed_at = now()
+        where id = #{id}
+          and confirm_status = 'PENDING'
+    </update>
+
+    <update id="markAttendeeSigned">
+        update t_meeting_attendee
+        set sign_status = 'SIGNED',
+            signed_at = now()
+        where id = #{id}
+          and sign_status = 'UNSIGNED'
+    </update>
+
+    <select id="listSignIns" resultType="map">
+        select
+            a.*,
+            a.user_id as employee_no,
+            a.user_name as real_name,
+            u.f_dept_id as department_id,
+            t.title as topic_title
+        from t_meeting_attendee a
+        left join t_wxdept_users u on u.f_user_id = a.user_id
+        join t_meeting_topic t on t.id = a.topic_id
+        where a.meeting_id = #{meetingId}
+          and a.sign_status = 'SIGNED'
+        order by a.signed_at desc
+    </select>
+
+    <insert id="insertNotification" useGeneratedKeys="true" keyProperty="id">
+        insert into t_meeting_notification(meeting_id, topic_id, title, msg_body, tousers, send_time, job_id, created_at)
+        values(#{meetingId}, #{topicId}, #{title}, #{content}, #{tousers}, now(), #{jobId}, now())
+    </insert>
+
+    <select id="listNotifications" resultType="map">
+        select n.*
+        from t_meeting_notification n
+        where n.tousers like concat('%', #{userId}, '%')
+        order by n.created_at desc
+    </select>
+
+    <select id="countTopicNotifications" resultType="int">
+        select count(1)
+        from t_meeting_notification n
+        where n.meeting_id = #{meetingId}
+          and n.topic_id = #{topicId}
+          and n.tousers like concat('%', #{userId}, '%')
+          and n.title = #{title}
+    </select>
+
+    <insert id="insertUploadedFile">
+        insert into t_meeting_uploaded_file(meeting_id, file_name, file_size, parser_status, parser_message, created_at)
+        values(#{meetingId}, #{fileName}, #{fileSize}, #{parserStatus}, #{parserMessage}, now())
+    </insert>
+</mapper>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.meeting.mapper.JoinSqlFragments">
+    <sql id="MeetingBaseColumns">
+        id,
+        meeting_date as meetingDate,
+        meeting_time as meetingTime,
+        period_no as periodNo,
+        location,
+        leaders,
+        content,
+        status,
+        creater as createdBy,
+        created_time as createdAt,
+        updated_time as updatedAt
+    </sql>
+
+    <sql id="MeetingBaseColumnsWithAlias">
+        ${alias}.id,
+        ${alias}.meeting_date as meetingDate,
+        ${alias}.meeting_time as meetingTime,
+        ${alias}.period_no as periodNo,
+        ${alias}.location,
+        ${alias}.leaders,
+        ${alias}.content,
+        ${alias}.status,
+        ${alias}.creater as createdBy,
+        ${alias}.created_time as createdAt,
+        ${alias}.updated_time as updatedAt
+    </sql>
+
+    <sql id="TopicBaseColumnsWithAlias">
+        ${alias}.id,
+        ${alias}.meeting_id as meetingId,
+        ${alias}.topic_type as topicType,
+        ${alias}.title,
+        ${alias}.report_dept_id as reportDepartmentId,
+        ${alias}.report_dept_name as reportDepartmentName,
+        ${alias}.participant_dept_id as participantDeptId,
+        ${alias}.participant_dept_name as participantDepartments,
+        ${alias}.summary,
+        ${alias}.notice,
+        ${alias}.project_code as projectCode,
+        ${alias}.sort_no as sortNo,
+        ${alias}.status,
+        ${alias}.start_time as startTime,
+        ${alias}.end_time as endTime,
+        ${alias}.actual_minutes as actualMinutes,
+        ${alias}.conclusion,
+        ${alias}.report_dept_signed as reportDepartmentSigned,
+        ${alias}.created_at as createdAt,
+        ${alias}.updated_at as updatedAt
+    </sql>
+
+    <sql id="UserSelectColumns">
+        u.f_user_id as id,
+        u.f_user_id as user_id,
+        u.f_user_id as employee_no,
+        u.f_user_name as username,
+        u.f_user_name as real_name,
+        u.f_dept_id as department_id,
+        d.f_dept_nm as department_name,
+        u.f_phone as mobile,
+        u.f_email as email,
+        u.f_position as position,
+        coalesce(a.authority_value, 0) as authority_value,
+        case coalesce(a.authority_value, 0)
+            when 1 then 'ADMIN'
+            when 2 then 'LEADER'
+            when 3 then 'SECRETARY'
+            else 'PARTICIPANT'
+        end as role
+    </sql>
+
+    <sql id="UserDepartmentAuthorityJoin">
+        left join t_wxdept d on d.f_dept_id = u.f_dept_id
+        left join (
+            select user_id, min(authority) as authority_value
+            from t_meeting_authority
+            where group_code = #{groupCode}
+            group by user_id
+        ) a on a.user_id = u.f_user_id
+    </sql>
+
+    <sql id="AttendeeUserDepartmentJoin">
+        left join t_wxdept_users u on u.f_user_id = a.user_id
+        left join t_wxdept d on d.f_dept_id = u.f_dept_id
+    </sql>
+</mapper>
