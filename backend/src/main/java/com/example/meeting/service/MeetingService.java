@@ -23,6 +23,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class MeetingService {
+    private static final String SHARE_NOTICE_TITLE = "\u4f1a\u8bae\u8bae\u9898\u5206\u4eab\u901a\u77e5";
+
     private final MeetingMapper meetingMapper;
     private final UserMapper userMapper;
     private final TopicFileParser topicFileParser;
@@ -119,6 +121,7 @@ public class MeetingService {
         if (!"ADMIN".equals(Maps.stringValue(currentUser, "role")) && "DRAFT".equals(Maps.stringValue(meeting, "status"))) {
             throw new BusinessException("会议尚未发布，当前角色不可查看");
         }
+        applyTopicPermissions(meeting, currentUser);
         return meeting;
     }
 
@@ -133,14 +136,20 @@ public class MeetingService {
             List<Map<String, Object>> topics = topicFileParser.parse(file, userMapper.listDepartments());
             upload.put("parserStatus", "SUCCESS");
             upload.put("parserMessage", "识别到 " + topics.size() + " 个议题");
+            meetingMapper.deleteTopicsNotIn(meetingId, new ArrayList<Long>());
+            saveTopics(meetingId, topics);
             meetingMapper.insertUploadedFile(upload);
+            List<Map<String, Object>> savedTopics = meetingMapper.listTopics(meetingId);
+            for (Map<String, Object> topic : savedTopics) {
+                normalizeTopicMap(topic);
+            }
             Map<String, Object> result = new HashMap<String, Object>();
             result.put("meetingId", meetingId);
             result.put("fileName", upload.get("fileName"));
             result.put("parserStatus", upload.get("parserStatus"));
             result.put("parserMessage", upload.get("parserMessage"));
-            result.put("topicCount", topics.size());
-            result.put("topics", topics);
+            result.put("topicCount", savedTopics.size());
+            result.put("topics", savedTopics);
             return result;
         } catch (BusinessException ex) {
             upload.put("parserStatus", "FAILED");
@@ -148,6 +157,18 @@ public class MeetingService {
             meetingMapper.insertUploadedFile(upload);
             throw ex;
         }
+    }
+
+    public Map<String, Object> parseTopics(MultipartFile file) {
+        List<Map<String, Object>> topics = topicFileParser.parse(file, userMapper.listDepartments());
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("meetingId", null);
+        result.put("fileName", file == null ? "" : file.getOriginalFilename());
+        result.put("parserStatus", "SUCCESS");
+        result.put("parserMessage", "识别到 " + topics.size() + " 个议题");
+        result.put("topicCount", topics.size());
+        result.put("topics", topics);
+        return result;
     }
 
     @Transactional
@@ -191,6 +212,10 @@ public class MeetingService {
         if ("LEADER".equals(role)) {
             return meetingMapper.listLeaderTasks(meetingId, userId(currentUser));
         }
+        List<Map<String, Object>> sharedTasks = meetingMapper.listSharedTasks(meetingId, userId(currentUser));
+        if (!sharedTasks.isEmpty()) {
+            return sharedTasks;
+        }
         return meetingMapper.listTopics(meetingId);
     }
 
@@ -205,16 +230,30 @@ public class MeetingService {
         assertCanSubmitAttendees(topic, attendeeType, currentUser);
         String submitter = userId(currentUser);
         meetingMapper.deleteAttendeesBySubmitter(topicId, attendeeType, submitter);
-        if (meetingMapper.countAttendees(topicId) + userIds.size() > maxAttendeesPerTopic) {
-            throw new BusinessException("超过最大参会人数限制：" + maxAttendeesPerTopic);
-        }
         Long meetingId = Maps.longValue(topic, "meetingId", "meeting_id");
+        List<Map<String, Object>> usersToInsert = new ArrayList<Map<String, Object>>();
         for (String selectedUserId : userIds) {
             Map<String, Object> selectedUser = userMapper.findById(selectedUserId, groupCode);
             if (selectedUser == null) {
-                throw new BusinessException("用户不存在或未同步：" + selectedUserId);
+                throw new BusinessException("\u7528\u6237\u4e0d\u5b58\u5728\u6216\u672a\u540c\u6b65\uff1a" + selectedUserId);
             }
-            meetingMapper.insertAttendee(meetingId, topicId, selectedUserId, Maps.stringValue(selectedUser, "username", "realName"), attendeeType, submitter);
+            assertAttendeeMatchesDepartment(topic, attendeeType, selectedUser);
+            if (meetingMapper.isTopicAttendeeByType(topicId, selectedUserId, attendeeType) > 0) {
+                continue;
+            }
+            usersToInsert.add(selectedUser);
+        }
+        if (meetingMapper.countAttendees(topicId) + usersToInsert.size() > maxAttendeesPerTopic) {
+            throw new BusinessException("\u8d85\u8fc7\u6700\u5927\u53c2\u4f1a\u4eba\u6570\u9650\u5236\uff1a" + maxAttendeesPerTopic);
+        }
+        for (Map<String, Object> selectedUser : usersToInsert) {
+            String selectedUserId = Maps.stringValue(selectedUser, "id", "userId", "user_id");
+            meetingMapper.insertAttendee(meetingId, topicId, selectedUserId,
+                    Maps.stringValue(selectedUser, "username", "realName"),
+                    attendeeType, submitter,
+                    "ADMIN".equals(Maps.stringValue(currentUser, "role")) ? "ADMIN" : "DEPARTMENT",
+                    "ADMIN".equals(Maps.stringValue(currentUser, "role")) ? null : Maps.stringValue(currentUser, "departmentId", "department_id"),
+                    "PENDING", null, null);
         }
         notifySubmitSuccess(topic, submitter);
         Map<String, Object> result = new HashMap<String, Object>();
@@ -343,6 +382,105 @@ public class MeetingService {
     }
 
     @Transactional
+    public Map<String, Object> updateTopicDetails(Long topicId, Map<String, Object> request, Map<String, Object> currentUser) {
+        assertAdmin(currentUser);
+        requireTopic(topicId);
+        Map<String, Object> topic = new HashMap<String, Object>();
+        topic.put("id", topicId);
+        topic.put("title", Maps.stringValue(request, "title"));
+        topic.put("topicType", Maps.stringValue(request, "topicType"));
+        topic.put("summary", Maps.stringValue(request, "summary"));
+        topic.put("conclusion", Maps.stringValue(request, "conclusion"));
+        meetingMapper.updateTopicDetails(topic);
+        return meetingMapper.findTopic(topicId);
+    }
+
+    @Transactional
+    public Map<String, Object> notifyTopicPreparation(Long topicId, Map<String, Object> request, Map<String, Object> currentUser) {
+        Map<String, Object> topic = requireTopic(topicId);
+        Map<String, Object> meeting = requireMeeting(Maps.longValue(topic, "meetingId", "meeting_id"));
+        String role = Maps.stringValue(currentUser, "role");
+        if (!"ADMIN".equals(role) && !"SECRETARY".equals(role) && !"LEADER".equals(role) && !hasSharedTopicAccess(topic, currentUser)) {
+            throw new BusinessException("\u5f53\u524d\u89d2\u8272\u65e0\u6743\u53d1\u9001\u901a\u77e5");
+        }
+        if ("DRAFT".equals(Maps.stringValue(meeting, "status"))) {
+            throw new BusinessException("\u4f1a\u8bae\u5c1a\u672a\u53d1\u5e03\uff0c\u4e0d\u80fd\u901a\u77e5\u53c2\u4f1a\u4eba\u5458");
+        }
+        assertCanOperateTopic(topic, currentUser);
+        List<String> shareUserIds = request == null ? new ArrayList<String>() : requestUserIds(request.get("shareUserIds"));
+        if (!shareUserIds.isEmpty()) {
+            return shareTopic(topic, meeting, shareUserIds, currentUser);
+        }
+        List<String> targetUserIds = request == null ? new ArrayList<String>() : requestUserIds(request.get("attendeeUserIds"));
+        List<Map<String, Object>> attendees = meetingMapper.listTopicAttendees(topicId);
+        List<Map<String, Object>> targets = new ArrayList<Map<String, Object>>();
+        for (Map<String, Object> attendee : attendees) {
+            String userId = Maps.stringValue(attendee, "userId", "user_id");
+            String confirmStatus = Maps.stringValue(attendee, "confirmStatus", "confirm_status");
+            if (!"PENDING".equals(confirmStatus)) {
+                continue;
+            }
+            if (!targetUserIds.isEmpty() && !targetUserIds.contains(userId)) {
+                continue;
+            }
+            targets.add(attendee);
+        }
+        if (targets.isEmpty()) {
+            throw new BusinessException("\u6682\u65e0\u53ef\u901a\u77e5\u7684\u53c2\u4f1a\u4eba\u5458");
+        }
+        for (Map<String, Object> attendee : targets) {
+            String userId = Maps.stringValue(attendee, "userId", "user_id");
+            String attendeeType = Maps.stringValue(attendee, "attendeeType", "attendee_type");
+            Map<String, Object> notice = notice(
+                    Maps.longValue(meeting, "id"),
+                    topicId,
+                    userId,
+                    "\u4f1a\u8bae\u5165\u573a\u51c6\u5907\u901a\u77e5",
+                    "\u60a8\u5df2\u88ab\u9009\u4e3a\u8bae\u9898\u300a" + Maps.stringValue(topic, "title") + "\u300b\u7684" + ("REPORT".equals(attendeeType) ? "\u6c47\u62a5\u4eba" : "PARTAKE".equals(attendeeType) ? "\u53c2\u4f1a\u4eba" : attendeeType) + "\uff0c\u8bf7\u505a\u597d\u5165\u573a\u51c6\u5907\u3002");
+            meetingMapper.insertNotification(notice);
+            notificationSender.send(notice);
+        }
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("meetingId", Maps.longValue(meeting, "id"));
+        result.put("topicId", topicId);
+        result.put("notifiedCount", targets.size());
+        result.put("attendees", targets);
+        return result;
+    }
+
+    private Map<String, Object> shareTopic(Map<String, Object> topic, Map<String, Object> meeting, List<String> shareUserIds, Map<String, Object> currentUser) {
+        Long meetingId = Maps.longValue(meeting, "id");
+        Long topicId = Maps.longValue(topic, "id");
+        String currentDepartmentId = Maps.stringValue(currentUser, "departmentId", "department_id");
+        List<Map<String, Object>> targets = new ArrayList<Map<String, Object>>();
+        for (String selectedUserId : shareUserIds) {
+            Map<String, Object> selectedUser = userMapper.findById(selectedUserId, groupCode);
+            if (selectedUser == null) {
+                throw new BusinessException("\u7528\u6237\u4e0d\u5b58\u5728\u6216\u672a\u540c\u6b65\uff1a" + selectedUserId);
+            }
+            String selectedDepartmentId = Maps.stringValue(selectedUser, "departmentId", "department_id");
+            if (currentDepartmentId != null && currentDepartmentId.length() > 0 && !currentDepartmentId.equals(selectedDepartmentId)) {
+                throw new BusinessException("\u53ea\u80fd\u5206\u4eab\u7ed9\u672c\u90e8\u95e8\u4eba\u5458");
+            }
+            targets.add(selectedUser);
+            Map<String, Object> notice = notice(
+                    meetingId,
+                    topicId,
+                    selectedUserId,
+                    SHARE_NOTICE_TITLE,
+                    "\u60a8\u5df2\u6536\u5230\u8bae\u9898\u300a" + Maps.stringValue(topic, "title") + "\u300b\u7684\u5206\u4eab\u5904\u7406\u6743\u9650\uff0c\u53ef\u534f\u52a9\u9009\u62e9\u6c47\u62a5\u4eba\u548c\u53c2\u4f1a\u4eba\u3002");
+            meetingMapper.insertNotification(notice);
+            notificationSender.send(notice);
+        }
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("meetingId", meetingId);
+        result.put("topicId", topicId);
+        result.put("sharedCount", targets.size());
+        result.put("attendees", targets);
+        return result;
+    }
+
+    @Transactional
     public Map<String, Object> confirmAttendees(Long meetingId, Map<String, Object> currentUser) {
         String role = Maps.stringValue(currentUser, "role");
         if (!"SECRETARY".equals(role) && !"LEADER".equals(role)) {
@@ -431,6 +569,8 @@ public class MeetingService {
         topic.put("startTime", Maps.dateTimeValue(topic, "startTime", "start_time"));
         topic.put("endTime", Maps.dateTimeValue(topic, "endTime", "end_time"));
         topic.put("actualMinutes", Maps.intValue(topic, "actualMinutes", "actual_minutes"));
+        topic.put("notice", Maps.stringValue(topic, "notice"));
+        topic.put("projectCode", Maps.stringValue(topic, "projectCode", "project_code"));
         topic.put("reportDepartmentSigned", Maps.intValue(topic, "reportDepartmentSigned", "report_department_signed", "reportDeptSigned", "report_dept_signed"));
         return topic;
     }
@@ -531,6 +671,8 @@ public class MeetingService {
         if (topic.get("topicType") == null) {
             topic.put("topicType", "三重一大");
         }
+        topic.put("notice", Maps.stringValue(topic, "notice"));
+        topic.put("projectCode", Maps.stringValue(topic, "projectCode", "project_code"));
         String reportDepartmentId = Maps.stringValue(topic, "reportDepartmentId", "report_department_id");
         topic.put("reportDepartmentId", reportDepartmentId);
         if (Maps.stringValue(topic, "reportDepartmentName", "report_department_name") == null) {
@@ -568,12 +710,12 @@ public class MeetingService {
     private String normalizeAttendeeType(String attendeeType, Map<String, Object> currentUser) {
         String type = attendeeType;
         if (type == null || type.length() == 0) {
-            type = "LEADER".equals(Maps.stringValue(currentUser, "role")) ? "PARTAKE" : "LEADER";
+            throw new BusinessException("\u8bf7\u6307\u5b9a\u53c2\u4f1a\u7c7b\u578b");
         }
         if ("PARTICIPANT".equals(type)) {
             return "PARTAKE";
         }
-        if (Arrays.asList("LEADER", "SHARE", "REPORT", "PARTAKE").contains(type)) {
+        if (Arrays.asList("REPORT", "PARTAKE").contains(type)) {
             return type;
         }
         throw new BusinessException("参会类型不支持：" + type);
@@ -581,33 +723,118 @@ public class MeetingService {
 
     private void assertCanSubmitAttendees(Map<String, Object> topic, String attendeeType, Map<String, Object> currentUser) {
         String role = Maps.stringValue(currentUser, "role");
+        if (!"REPORT".equals(attendeeType) && !"PARTAKE".equals(attendeeType)) {
+            throw new BusinessException("\u53ea\u80fd\u9009\u62e9\u6c47\u62a5\u4eba\u6216\u53c2\u4f1a\u4eba");
+        }
         if ("ADMIN".equals(role)) {
             return;
         }
-        String currentUserId = userId(currentUser);
+        if (canSubmitAttendeeType(topic, attendeeType, currentUser)) {
+            return;
+        }
+        throw new BusinessException("\u5f53\u524d\u89d2\u8272\u65e0\u6743\u5904\u7406\u8be5\u8bae\u9898");
+    }
+
+
+    private void assertCanOperateTopic(Map<String, Object> topic, Map<String, Object> currentUser) {
+        if (!canOperateTopic(topic, currentUser)) {
+            throw new BusinessException("\u5f53\u524d\u89d2\u8272\u65e0\u6743\u5904\u7406\u8be5\u8bae\u9898");
+        }
+    }
+
+    private boolean canOperateTopic(Map<String, Object> topic, Map<String, Object> currentUser) {
+        String role = Maps.stringValue(currentUser, "role");
+        if ("ADMIN".equals(role)) {
+            return true;
+        }
         String departmentId = Maps.stringValue(currentUser, "departmentId", "department_id");
-        if ("SECRETARY".equals(role)) {
-            if (!"LEADER".equals(attendeeType)) {
-                throw new BusinessException("秘书只能选择科组长");
+        if ("SECRETARY".equals(role) && canOperateTopicByDepartment(topic, departmentId)) {
+            return true;
+        }
+        return hasSharedTopicAccess(topic, currentUser);
+    }
+
+    private boolean canSubmitAttendeeType(Map<String, Object> topic, String attendeeType, Map<String, Object> currentUser) {
+        String role = Maps.stringValue(currentUser, "role");
+        if (!"SECRETARY".equals(role) && !hasSharedTopicAccess(topic, currentUser)) {
+            return false;
+        }
+        String departmentId = Maps.stringValue(currentUser, "departmentId", "department_id");
+        if (departmentId == null || departmentId.length() == 0) {
+            return false;
+        }
+        if ("REPORT".equals(attendeeType)) {
+            return parseDepartmentIds(Maps.stringValue(topic, "reportDepartmentId", "report_department_id")).contains(departmentId);
+        }
+        if ("PARTAKE".equals(attendeeType)) {
+            return parseDepartmentIds(Maps.stringValue(topic, "participantDeptId", "participant_dept_id")).contains(departmentId);
+        }
+        return false;
+    }
+
+    private boolean canOperateTopicByDepartment(Map<String, Object> topic, String departmentId) {
+        if (departmentId == null || departmentId.length() == 0) {
+            return false;
+        }
+        List<String> reportDepartmentIds = parseDepartmentIds(Maps.stringValue(topic, "reportDepartmentId", "report_department_id"));
+        List<String> participantDepartmentIds = parseDepartmentIds(Maps.stringValue(topic, "participantDeptId", "participant_dept_id"));
+        return reportDepartmentIds.contains(departmentId) || participantDepartmentIds.contains(departmentId);
+    }
+
+    private boolean hasSharedTopicAccess(Map<String, Object> topic, Map<String, Object> currentUser) {
+        Long meetingId = Maps.longValue(topic, "meetingId", "meeting_id");
+        Long topicId = Maps.longValue(topic, "id");
+        if (meetingId == null || topicId == null) {
+            return false;
+        }
+        return meetingMapper.countTopicNotifications(meetingId, topicId, userId(currentUser), SHARE_NOTICE_TITLE) > 0;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void applyTopicPermissions(Map<String, Object> meeting, Map<String, Object> currentUser) {
+        Object topicsValue = meeting.get("topics");
+        if (!(topicsValue instanceof List<?>)) {
+            return;
+        }
+        String role = Maps.stringValue(currentUser, "role");
+        String departmentId = Maps.stringValue(currentUser, "departmentId", "department_id");
+        for (Object item : (List<?>) topicsValue) {
+            if (!(item instanceof Map<?, ?>)) {
+                continue;
             }
-            String reportDepartmentId = Maps.stringValue(topic, "reportDepartmentId", "report_department_id");
+            Map<String, Object> topic = (Map<String, Object>) item;
+            List<String> reportDepartmentIds = parseDepartmentIds(Maps.stringValue(topic, "reportDepartmentId", "report_department_id"));
             List<String> participantDepartmentIds = parseDepartmentIds(Maps.stringValue(topic, "participantDeptId", "participant_dept_id"));
-            if (departmentId != null && (departmentId.equals(reportDepartmentId) || participantDepartmentIds.contains(departmentId))) {
-                return;
-            }
-            throw new BusinessException("当前秘书无权处理该议题");
+            boolean shared = hasSharedTopicAccess(topic, currentUser);
+            boolean admin = "ADMIN".equals(role);
+            boolean secretary = "SECRETARY".equals(role);
+            boolean canReport = admin || ((secretary || shared) && reportDepartmentIds.contains(departmentId));
+            boolean canPartake = admin || ((secretary || shared) && participantDepartmentIds.contains(departmentId));
+            topic.put("canSelectReporter", canReport);
+            topic.put("canSelectParticipant", canPartake);
+            topic.put("canShareTopic", !admin && (canReport || canPartake));
+            topic.put("sharedAccess", shared);
         }
-        if ("LEADER".equals(role)) {
-            if (!"PARTAKE".equals(attendeeType)) {
-                throw new BusinessException("科组长只能选择参会人员");
-            }
-            Long topicId = Maps.longValue(topic, "id");
-            if (topicId != null && meetingMapper.isTopicAttendeeByType(topicId, currentUserId, "LEADER") > 0) {
-                return;
-            }
-            throw new BusinessException("当前科组长无权处理该议题");
+    }
+
+    private void assertAttendeeMatchesDepartment(Map<String, Object> topic, String attendeeType, Map<String, Object> user) {
+        String departmentId = Maps.stringValue(user, "departmentId", "department_id");
+        if (departmentId == null || departmentId.length() == 0) {
+            return;
         }
-        throw new BusinessException("当前角色无权选择参会人员");
+        if ("REPORT".equals(attendeeType)) {
+            List<String> reportDepartmentIds = parseDepartmentIds(Maps.stringValue(topic, "reportDepartmentId", "report_department_id"));
+            if (!reportDepartmentIds.contains(departmentId)) {
+                throw new BusinessException("\u6c47\u62a5\u4eba\u5fc5\u987b\u5c5e\u4e8e\u6c47\u62a5\u90e8\u95e8");
+            }
+            return;
+        }
+        if ("PARTAKE".equals(attendeeType)) {
+            List<String> participantDepartmentIds = parseDepartmentIds(Maps.stringValue(topic, "participantDeptId", "participant_dept_id"));
+            if (!participantDepartmentIds.contains(departmentId)) {
+                throw new BusinessException("\u53c2\u4f1a\u4eba\u5fc5\u987b\u5c5e\u4e8e\u53c2\u4f1a\u90e8\u95e8");
+            }
+        }
     }
 
     private List<String> parseDepartmentIds(Object value) {

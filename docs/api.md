@@ -110,7 +110,7 @@ Content-Type: application/json
 | `reportDepartmentId` | 汇报部门 ID |
 | `participantDepartments` | 参会部门名称文本 |
 | `participantDepartmentIds` | 参会部门 ID 数组 |
-| `summary` | 议题简述 |
+| `summary` | 会议纪要 |
 | `sortNo` | 议题排序 |
 
 响应会返回完整会议详情，包括 `topics`。Postman Tests 可保存 ID：
@@ -284,7 +284,7 @@ Postman Body：
 
 - 仅支持 `.doc`、`.docx`
 - 单文件最大 50MB
-- 解析字段包括：议题类型、议题标题、汇报部门、参会部门、议题简述
+- 解析字段包括：议题类型、议题标题、汇报部门、参会部门、会议纪要
 
 常见失败：
 
@@ -323,7 +323,7 @@ Authorization: Bearer {{secretaryToken}}
 业务逻辑：
 
 - `SECRETARY`：返回本部门是汇报部门或参会部门的议题。
-- `LEADER`：返回自己已被选为 `LEADER` 的议题。
+- `ADMIN`：返回会议全部议题。
 - 其他角色：当前返回会议全部议题。
 
 响应示例：
@@ -361,28 +361,28 @@ Authorization: Bearer {{secretaryToken}}
 Content-Type: application/json
 ```
 
-请求体，秘书选择科组长：
+请求体，管理员或秘书选择汇报人：
 
 ```json
 {
   "userIds": [4],
-  "attendeeType": "LEADER"
+  "attendeeType": "REPORT"
 }
 ```
 
-请求头，科组长提交普通参会人员：
+请求头，管理员或秘书选择参会人员：
 
 ```text
 Authorization: Bearer {{leaderToken}}
 Content-Type: application/json
 ```
 
-请求体，科组长选择参会人员：
+请求体，选择参会人员：
 
 ```json
 {
   "userIds": [6],
-  "attendeeType": "PARTICIPANT"
+  "attendeeType": "PARTAKE"
 }
 ```
 
@@ -391,7 +391,7 @@ Content-Type: application/json
 | 字段 | 说明 |
 |---|---|
 | `userIds` | 被选择的用户 ID 数组，不能为空 |
-| `attendeeType` | `LEADER` 或 `PARTICIPANT`。不传时，系统按当前用户角色推断 |
+| `attendeeType` | `REPORT` 或 `PARTAKE`。不传时，系统按当前用户角色推断 |
 
 业务规则：
 
@@ -415,7 +415,7 @@ Content-Type: application/json
         "id": 1,
         "topicId": 1,
         "userId": 4,
-        "attendeeType": "LEADER",
+        "attendeeType": "REPORT",
         "selectedBy": 2,
         "username": "规划科组长",
         "realName": "规划科组长",
@@ -586,12 +586,12 @@ Content-Type: application/json
 }
 ```
 
-### 4.3 保存会议结论
+### 4.3 更新议题信息
 
-用途：保存某个议题的会议结论，可同时调整实际时长。
+用途：管理员直接维护议题名称、议题类型、会议纪要和会议结论。
 
 ```http
-PUT {{baseUrl}}/topics/{{topicId}}/conclusion
+PUT {{baseUrl}}/topics/{{topicId}}
 ```
 
 请求头：
@@ -605,8 +605,10 @@ Content-Type: application/json
 
 ```json
 {
-  "conclusion": "同意按程序推进",
-  "actualMinutes": 12
+  "title": "技术平台升级事项",
+  "topicType": "重大决策",
+  "summary": "同意按程序推进",
+  "conclusion": "同意按程序推进"
 }
 ```
 
@@ -614,8 +616,10 @@ Content-Type: application/json
 
 | 字段 | 是否必填 | 说明 |
 |---|---|---|
+| `title` | 是 | 议题名称 |
+| `topicType` | 是 | 议题类型 |
+| `summary` | 否 | 会议纪要 |
 | `conclusion` | 否 | 会议结论文本 |
-| `actualMinutes` | 否 | 实际时长；传入后会覆盖议题原实际时长 |
 
 响应示例：
 
@@ -626,8 +630,9 @@ Content-Type: application/json
   "data": {
     "id": 1,
     "title": "技术平台升级事项",
-    "conclusion": "同意按程序推进",
-    "actualMinutes": 12
+    "topicType": "重大决策",
+    "summary": "同意按程序推进",
+    "conclusion": "同意按程序推进"
   }
 }
 ```

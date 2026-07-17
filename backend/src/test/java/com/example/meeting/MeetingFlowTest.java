@@ -48,7 +48,7 @@ class MeetingFlowTest {
             public void call() {
                 meetingService.createMeeting(meetingPayload(), user("U0002"));
             }
-        }).isInstanceOf(BusinessException.class).hasMessageContaining("会议管理员");
+        }).isInstanceOf(BusinessException.class).hasMessageContaining("仅会议管理员");
     }
 
     @Test
@@ -61,10 +61,9 @@ class MeetingFlowTest {
         assertThat(meetingService.publish(meetingId).get("status")).isEqualTo("PUBLISHED");
         assertThat(meetingService.selectionTasks(meetingId, user("U0002"))).hasSize(1);
 
-        meetingService.submitAttendees(topicId, attendeePayload("U0004", "LEADER"), user("U0002"));
-        assertThat(meetingService.confirmAttendees(meetingId, user("U0002")).get("confirmedCount")).isEqualTo(1);
-        meetingService.submitAttendees(topicId, attendeePayload("U0006", "PARTICIPANT"), user("U0004"));
-        assertThat(meetingService.confirmAttendees(meetingId, user("U0004")).get("confirmedCount")).isEqualTo(1);
+        meetingService.submitAttendees(topicId, attendeePayload("U0004", "REPORT"), user("U0002"));
+        meetingService.submitAttendees(topicId, attendeePayload("U0006", "PARTAKE"), user("U0002"));
+        assertThat(meetingService.confirmAttendees(meetingId, user("U0002")).get("confirmedCount")).isEqualTo(2);
 
         Map<String, Object> qr = meetingService.createSignQrCode(meetingId);
         Map<String, Object> signIn = new HashMap<String, Object>();
@@ -85,12 +84,12 @@ class MeetingFlowTest {
         assertThat(dashboard.get("status")).isEqualTo("FINISHED");
 
         Map<String, Object> conclusion = new HashMap<String, Object>();
-        conclusion.put("conclusion", "同意按程序推进");
-        assertThat(meetingService.saveConclusion(topicId, conclusion).get("conclusion")).isEqualTo("同意按程序推进");
+        conclusion.put("conclusion", "???????");
+        assertThat(meetingService.saveConclusion(topicId, conclusion).get("conclusion")).isEqualTo("???????");
     }
 
     @Test
-    void importTopicsOnlyParsesAndRecordsUpload() throws Exception {
+    void importTopicsReplacesAndPersistsParsedTopics() throws Exception {
         Map<String, Object> meeting = meetingService.createMeeting(emptyMeetingPayload(), user("U0001"));
         Long meetingId = Maps.longValue(meeting, "id");
         MockMultipartFile file = new MockMultipartFile("file", "topics.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", docxBytes());
@@ -99,7 +98,13 @@ class MeetingFlowTest {
 
         assertThat(result.get("parserStatus")).isEqualTo("SUCCESS");
         assertThat((List<Map<String, Object>>) result.get("topics")).hasSize(1);
-        assertThat((List<Map<String, Object>>) meetingService.detail(meetingId).get("topics")).isEmpty();
+        List<Map<String, Object>> savedTopics = (List<Map<String, Object>>) meetingService.detail(meetingId).get("topics");
+        assertThat(savedTopics).hasSize(1);
+        assertThat(savedTopics.get(0).get("title")).isEqualTo("测试议题");
+        assertThat(savedTopics.get(0).get("summary")).isEqualTo("测试会议纪要");
+        assertThat(savedTopics.get(0).get("conclusion")).isEqualTo("同意按程序推进");
+        assertThat(savedTopics.get(0).get("notice")).isEqualTo("三重一大：测试议题（P001，100万元，公开招标，综合部汇报，网络运行部参会）");
+        assertThat(savedTopics.get(0).get("projectCode")).isEqualTo("P001");
     }
 
     @Test
@@ -162,9 +167,28 @@ class MeetingFlowTest {
         assertThatThrownBy(new ThrowableAssert.ThrowingCallable() {
             @Override
             public void call() {
-                meetingService.submitAttendees(topicId, attendeePayload("U0004", "U0005", "U0006", "U0007"), user("U0002"));
+                meetingService.submitAttendees(topicId, attendeePayload("U9999"), user("U0002"));
             }
-        }).isInstanceOf(BusinessException.class).hasMessageContaining("最大参会人数");
+        }).isInstanceOf(BusinessException.class).hasMessageContaining("用户不存在或未同步");
+    }
+
+    @Test
+    void skipsDuplicateAttendeesFromOtherSubmitters() {
+        Map<String, Object> meeting = meetingService.createMeeting(meetingPayload(), user("U0001"));
+        Long topicId = Maps.longValue(((List<Map<String, Object>>) meeting.get("topics")).get(0), "id");
+
+        meetingService.submitAttendees(topicId, attendeePayload("U0004", "REPORT"), user("U0001"));
+        Map<String, Object> result = meetingService.submitAttendees(topicId, attendeePayload("U0004", "REPORT"), user("U0002"));
+
+        List<Map<String, Object>> attendees = (List<Map<String, Object>>) result.get("attendees");
+        int reportCount = 0;
+        for (Map<String, Object> attendee : attendees) {
+            if ("REPORT".equals(Maps.stringValue(attendee, "attendeeType", "attendee_type"))
+                    && "U0004".equals(Maps.stringValue(attendee, "userId", "user_id"))) {
+                reportCount++;
+            }
+        }
+        assertThat(reportCount).isEqualTo(1);
     }
 
     @Test
@@ -186,15 +210,15 @@ class MeetingFlowTest {
         assertThat(meetingIds(meetingService.listMeetings(user("U0004")))).doesNotContain(planMeetingId);
         assertThat(meetingIds(meetingService.listMeetings(user("U0006")))).doesNotContain(planMeetingId);
 
-        meetingService.submitAttendees(planTopicId, attendeePayload("U0004", "LEADER"), user("U0002"));
+        meetingService.submitAttendees(planTopicId, attendeePayload("U0004", "REPORT"), user("U0002"));
         assertThat(meetingIds(meetingService.listMeetings(user("U0004")))).doesNotContain(planMeetingId);
         meetingService.confirmAttendees(planMeetingId, user("U0002"));
         assertThat(meetingIds(meetingService.listMeetings(user("U0004")))).contains(planMeetingId);
         assertThat(meetingIds(meetingService.listMeetings(user("U0006")))).doesNotContain(planMeetingId);
 
-        meetingService.submitAttendees(planTopicId, attendeePayload("U0006", "PARTICIPANT"), user("U0004"));
+        meetingService.submitAttendees(planTopicId, attendeePayload("U0006", "PARTAKE"), user("U0002"));
         assertThat(meetingIds(meetingService.listMeetings(user("U0006")))).doesNotContain(planMeetingId);
-        meetingService.confirmAttendees(planMeetingId, user("U0004"));
+        meetingService.confirmAttendees(planMeetingId, user("U0002"));
         assertThat(meetingIds(meetingService.listMeetings(user("U0006")))).contains(planMeetingId);
         assertThat(secretaryMeetings).filteredOn(item -> Maps.longValue(item, "id").equals(planMeetingId))
                 .extracting(item -> Maps.intValue(item, "topicCount", "topic_count"))
@@ -208,10 +232,9 @@ class MeetingFlowTest {
         Long topicId = Maps.longValue(((List<Map<String, Object>>) meeting.get("topics")).get(0), "id");
 
         meetingService.publish(meetingId);
-        meetingService.submitAttendees(topicId, attendeePayload("U0004", "LEADER"), user("U0002"));
+        meetingService.submitAttendees(topicId, attendeePayload("U0004", "REPORT"), user("U0002"));
+        meetingService.submitAttendees(topicId, attendeePayload("U0006", "PARTAKE"), user("U0002"));
         meetingService.confirmAttendees(meetingId, user("U0002"));
-        meetingService.submitAttendees(topicId, attendeePayload("U0006", "PARTICIPANT"), user("U0004"));
-        meetingService.confirmAttendees(meetingId, user("U0004"));
         Map<String, Object> detail = meetingService.detail(meetingId);
         List<Map<String, Object>> attendees = (List<Map<String, Object>>) detail.get("attendees");
         assertThat(attendees).extracting(item -> Maps.stringValue(item, "employeeNo", "employee_no")).contains("U0006");
@@ -244,9 +267,9 @@ class MeetingFlowTest {
         meeting.put("meetingDate", "2026-07-08");
         meeting.put("meetingTime", "09:00");
         meeting.put("periodNo", "2026年第1期");
-        meeting.put("location", "第一会议室");
-        meeting.put("leaders", "局领导");
-        meeting.put("content", "三重一大事项审议");
+        meeting.put("location", "会议室A");
+        meeting.put("leaders", "领导A");
+        meeting.put("content", "测试会议内容");
         meeting.put("topics", new ArrayList<Map<String, Object>>());
         return meeting;
     }
@@ -259,11 +282,11 @@ class MeetingFlowTest {
         Map<String, Object> meeting = emptyMeetingPayload();
         List<Map<String, Object>> topics = new ArrayList<Map<String, Object>>();
         Map<String, Object> topic = new HashMap<String, Object>();
-        topic.put("topicType", "重大项目");
-        topic.put("title", "技术平台升级事项");
+        topic.put("topicType", "三重一大");
+        topic.put("title", "测试议题");
         topic.put("reportDepartmentId", reportDepartmentId);
         topic.put("participantDepartmentIds", participantDepartmentIds);
-        topic.put("summary", "审议平台升级计划");
+        topic.put("summary", "测试会议纪要");
         topic.put("sortNo", 1);
         topics.add(topic);
         meeting.put("topics", topics);
@@ -272,11 +295,9 @@ class MeetingFlowTest {
 
     private byte[] docxBytes() throws Exception {
         XWPFDocument document = new XWPFDocument();
-        addParagraph(document, "议题标题：数据治理项目建设");
-        addParagraph(document, "议题类型：重大项目");
-        addParagraph(document, "汇报部门：技术规划处");
-        addParagraph(document, "参会部门：技术规划处、数据中心");
-        addParagraph(document, "议题简述：审议数据治理项目建设方案");
+        addParagraph(document, "三重一大：测试议题（P001，100万元，公开招标，综合部汇报，网络运行部参会）");
+        addParagraph(document, "测试会议纪要");
+        addParagraph(document, "拟结论：同意按程序推进");
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         document.write(out);
         document.close();
@@ -306,7 +327,7 @@ class MeetingFlowTest {
     private Map<String, Object> attendeePayload(String... userIds) {
         Map<String, Object> payload = new HashMap<String, Object>();
         payload.put("userIds", Arrays.asList(userIds));
-        payload.put("attendeeType", "LEADER");
+        payload.put("attendeeType", "REPORT");
         return payload;
     }
 }

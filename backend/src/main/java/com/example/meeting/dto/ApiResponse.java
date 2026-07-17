@@ -13,9 +13,8 @@ public class ApiResponse<T> {
         this.message = message;
         this.data = data;
     }
-
     public static <T> ApiResponse<T> ok(T data) {
-        return new ApiResponse<T>(true, "OK", data);
+        return new ApiResponse<T>(true, "成功", data);
     }
 
     public static <T> ApiResponse<T> fail(String message) {

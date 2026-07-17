@@ -73,7 +73,7 @@
               </el-select>
             </template>
           </el-table-column>
-          <el-table-column label="议题简述" min-width="260">
+          <el-table-column label="会议纪要" min-width="260">
             <template #default="{ row }"><el-input v-model="row.summary" type="textarea" :rows="2" resize="none" /></template>
           </el-table-column>
           <el-table-column label="操作" width="128" align="center" fixed="right">
@@ -171,7 +171,7 @@ async function saveMeeting(showMessage: boolean) {
     return saved as MeetingItem
   } catch (error: any) {
     ElMessage.error(error.message || '保存失败')
-    throw error
+    return null
   } finally {
     saving.value = false
   }
@@ -181,6 +181,7 @@ async function publishMeeting() {
   publishing.value = true
   try {
     const saved = meetingId.value ? await saveMeeting(false) : await saveMeeting(false)
+    if (!saved) return
     await ElMessageBox.confirm('发布后将给议题涉及部门秘书生成通知。', '确认发布')
     detail.value = await api.publish(saved.id) as MeetingItem
     ElMessage.success('发布成功')
@@ -196,8 +197,9 @@ async function uploadTopicFile(file: UploadFile) {
   if (!file.raw) return
   uploading.value = true
   try {
-    const currentId = meetingId.value || (await saveMeeting(false)).id
-    const data = await api.importTopics(currentId, file.raw) as ImportResult
+    const data = (meetingId.value
+      ? await api.importTopics(meetingId.value, file.raw)
+      : await api.parseTopics(file.raw)) as ImportResult
     form.topics = data.topics.map((topic, index) => normalizeTopic({ ...topic, sortNo: index + 1 }))
     importMessage.value = `${data.parserMessage}，请核对后点击保存。`
     ElMessage.success('议题解析成功')
@@ -241,6 +243,9 @@ function normalizeTopic(topic: any): TopicPayload {
     participantDepartmentIds: normalizeDepartmentIds(topic.participantDepartmentIds || topic.participantDeptId),
     participantDepartments: topic.participantDepartments || topic.participantDeptName,
     summary: topic.summary || '',
+    conclusion: topic.conclusion || '',
+    notice: topic.notice || '',
+    projectCode: topic.projectCode || topic.project_code || '',
     sortNo: Number(topic.sortNo || form.topics.length + 1)
   }
 }

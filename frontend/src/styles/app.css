@@ -513,21 +513,63 @@ select {
 
 .mobile-page {
   min-height: 100vh;
-  background: #f4f7fb;
-  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  color: #172033;
+  background: #f3f6fa;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+}
+
+.mobile-page .van-nav-bar {
+  height: 46px;
+  border-bottom: 1px solid #e7ecf3;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02);
+}
+
+.mobile-page .van-nav-bar__title {
+  color: #111827;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.mobile-page .van-cell {
+  padding: 9px 10px;
+  color: #172033;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.mobile-page .van-cell__label {
+  margin-top: 3px;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.mobile-page .van-button--small,
+.mobile-page .van-button--mini {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+.mobile-page .van-tag {
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .mobile-content {
-  padding: 12px;
+  padding: 8px 10px 14px;
 }
 
 .mobile-card {
-  margin-bottom: 12px;
-  padding: 16px;
+  margin-bottom: 8px;
+  padding: 12px;
   background: #fff;
-  border: 1px solid #edf1f7;
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  border: 1px solid #e7ecf3;
+  border-radius: 10px;
+  box-shadow: none;
 }
 
 @media (max-width: 900px) {

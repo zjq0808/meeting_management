@@ -13,12 +13,22 @@
         <h2>会议基本信息</h2>
         <el-form :model="form" label-position="top">
           <div class="two-cols">
-            <el-form-item label="会议日期"><el-date-picker v-model="form.meetingDate" value-format="YYYY-MM-DD" type="date" placeholder="选择日期" /></el-form-item>
-            <el-form-item label="会议时间"><el-input v-model="form.meetingTime" placeholder="例如 15:00" /></el-form-item>
+            <el-form-item label="会议日期">
+              <el-date-picker v-model="form.meetingDate" value-format="YYYY-MM-DD" type="date" placeholder="选择日期" />
+            </el-form-item>
+            <el-form-item label="会议时间">
+              <el-input v-model="form.meetingTime" placeholder="例如 15:00" />
+            </el-form-item>
           </div>
-          <el-form-item label="会议期数"><el-input v-model="form.periodNo" placeholder="例如 2026年第1期" /></el-form-item>
-          <el-form-item label="会议地点"><el-input v-model="form.location" placeholder="输入会议室" /></el-form-item>
-          <el-form-item label="参会领导"><el-input v-model="form.leaders" placeholder="兼容字段，领导参会可后续通过人员遴选维护" /></el-form-item>
+          <el-form-item label="会议期数">
+            <el-input v-model="form.periodNo" placeholder="例如 2026年第1期" />
+          </el-form-item>
+          <el-form-item label="会议地点">
+            <el-input v-model="form.location" placeholder="输入会议室" />
+          </el-form-item>
+          <el-form-item label="参会领导">
+            <el-input v-model="form.leaders" placeholder="兼容字段，领导参会可后续通过人员遴选维护" />
+          </el-form-item>
           <el-form-item label="参会人员">
             <button type="button" class="attendee-link" @click="attendeeVisible = true">
               <el-icon><View /></el-icon>
@@ -26,7 +36,9 @@
               <strong>{{ attendees.length }} 人</strong>
             </button>
           </el-form-item>
-          <el-form-item label="会议内容"><el-input v-model="form.content" type="textarea" :rows="5" resize="none" placeholder="输入会议背景或主要内容" /></el-form-item>
+          <el-form-item label="会议内容">
+            <el-input v-model="form.content" type="textarea" :rows="5" resize="none" placeholder="输入会议背景或主要内容" />
+          </el-form-item>
         </el-form>
       </section>
 
@@ -41,13 +53,49 @@
           </div>
         </div>
         <el-alert v-if="importMessage" class="import-tip" type="success" :closable="true" :title="importMessage" @close="importMessage = ''" />
-        <el-table :data="form.topics" border row-key="sortNo" empty-text="暂无参会议题，请导入 Word 或手动新增">
-          <el-table-column label="序号" width="70" align="center"><template #default="{ $index }">{{ pad($index + 1) }}</template></el-table-column>
-          <el-table-column label="议题名称" min-width="240"><template #default="{ row }"><el-input v-model="row.title" placeholder="议题名称" /></template></el-table-column>
-          <el-table-column label="类型" width="150"><template #default="{ row }"><el-input v-model="row.topicType" /></template></el-table-column>
-          <el-table-column label="汇报部门" width="190">
+        <el-table
+          :data="form.topics"
+          border
+          row-key="sortNo"
+          empty-text="暂无参会议题，请导入 Word 或手动新增"
+          :row-class-name="topicRowClassName"
+          @dragover.capture="handleTopicTableDragOver"
+          @drop.capture="handleTopicTableDrop"
+        >
+          <el-table-column label="序号" width="70" align="center" fixed="left">
+            <template #default="{ $index }">{{ pad($index + 1) }}</template>
+          </el-table-column>
+          <el-table-column label="排序" width="140" align="center" fixed="left">
+            <template #default="{ $index }">
+              <div class="sort-actions">
+                <el-tooltip content="拖动排序" placement="top">
+                  <span
+                    class="drag-sort-button"
+                    draggable="true"
+                    @dragstart="startTopicDrag($index, $event)"
+                    @dragend="endTopicDrag"
+                  >
+                    <el-icon><Rank /></el-icon>
+                  </span>
+                </el-tooltip>
+                <el-tooltip content="上移" placement="top">
+                  <el-button link :icon="ArrowUp" :disabled="$index === 0" @click="moveTopic($index, -1)" />
+                </el-tooltip>
+                <el-tooltip content="下移" placement="top">
+                  <el-button link :icon="ArrowDown" :disabled="$index === form.topics.length - 1" @click="moveTopic($index, 1)" />
+                </el-tooltip>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="议题名称" min-width="240">
+            <template #default="{ row }"><el-input v-model="row.title" placeholder="议题名称" /></template>
+          </el-table-column>
+          <el-table-column label="类型" width="150">
+            <template #default="{ row }"><el-input v-model="row.topicType" /></template>
+          </el-table-column>
+          <el-table-column label="汇报部门" width="210">
             <template #default="{ row }">
-              <el-select v-model="row.reportDepartmentId" clearable filterable placeholder="选择部门">
+              <el-select v-model="row.reportDepartmentIds" multiple collapse-tags filterable placeholder="选择部门">
                 <el-option v-for="dept in departments" :key="dept.id" :label="dept.name" :value="dept.id" />
               </el-select>
             </template>
@@ -59,11 +107,13 @@
               </el-select>
             </template>
           </el-table-column>
-          <el-table-column label="议题简述" min-width="240"><template #default="{ row }"><el-input v-model="row.summary" type="textarea" :rows="2" resize="none" /></template></el-table-column>
-          <el-table-column label="操作" width="132" align="center" fixed="right">
+          <el-table-column label="会议纪要" min-width="240">
+            <template #default="{ row }">
+              <el-input v-model="row.summary" type="textarea" :rows="2" resize="none" />
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="78" align="center" fixed="right">
             <template #default="{ $index }">
-              <el-button link :icon="Top" :disabled="$index === 0" @click="moveTopic($index, -1)" />
-              <el-button link :icon="Bottom" :disabled="$index === form.topics.length - 1" @click="moveTopic($index, 1)" />
               <el-button link type="danger" :icon="Delete" @click="removeTopic($index)" />
             </template>
           </el-table-column>
@@ -79,14 +129,14 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, UploadFile } from 'element-plus'
-import { Back, Bottom, Delete, DocumentChecked, Plus, Promotion, Top, Upload, View } from '@element-plus/icons-vue'
+import { ArrowDown, ArrowUp, Back, Delete, DocumentChecked, Plus, Promotion, Rank, Upload, View } from '@element-plus/icons-vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import PersonListDrawer from '@/components/meeting/PersonListDrawer.vue'
 import { api, DepartmentItem, ImportResult, MeetingItem, MeetingPayload, TopicPayload, UserItem } from '@/api/meeting'
 
 const route = useRoute()
 const router = useRouter()
-const meetingId = computed(() => route.params.id ? Number(route.params.id) : 0)
+const meetingId = computed(() => (route.params.id ? Number(route.params.id) : 0))
 const departments = ref<DepartmentItem[]>([])
 const detail = ref<MeetingItem | null>(null)
 const attendeeVisible = ref(false)
@@ -94,7 +144,17 @@ const saving = ref(false)
 const publishing = ref(false)
 const uploading = ref(false)
 const importMessage = ref('')
-const form = reactive<MeetingPayload>({ meetingDate: '', meetingTime: '', periodNo: '', location: '', leaders: '', content: '', topics: [] })
+const draggingTopicIndex = ref<number | null>(null)
+const dragOverTopicIndex = ref<number | null>(null)
+const form = reactive<MeetingPayload>({
+  meetingDate: '',
+  meetingTime: '',
+  periodNo: '',
+  location: '',
+  leaders: '',
+  content: '',
+  topics: []
+})
 
 const attendees = computed<UserItem[]>(() => {
   const map = new Map<string, UserItem>()
@@ -104,9 +164,9 @@ const attendees = computed<UserItem[]>(() => {
 })
 
 async function load() {
-  departments.value = await api.departments() as DepartmentItem[]
+  departments.value = (await api.departments()) as DepartmentItem[]
   if (!meetingId.value) return
-  const data = await api.meetingDetail(meetingId.value) as MeetingItem
+  const data = (await api.meetingDetail(meetingId.value)) as MeetingItem
   detail.value = data
   Object.assign(form, {
     meetingDate: data.meetingDate || '',
@@ -120,7 +180,13 @@ async function load() {
 }
 
 function addTopic() {
-  form.topics.push({ topicType: '三重一大', title: '', sortNo: form.topics.length + 1, participantDepartmentIds: [] })
+  form.topics.push({
+    topicType: '三重一大',
+    title: '',
+    sortNo: form.topics.length + 1,
+    reportDepartmentIds: [],
+    participantDepartmentIds: []
+  })
 }
 
 function removeTopic(index: number) {
@@ -130,10 +196,66 @@ function removeTopic(index: number) {
 
 function moveTopic(index: number, step: number) {
   const target = index + step
+  moveTopicTo(index, target)
+}
+
+function moveTopicTo(index: number, target: number) {
   if (target < 0 || target >= form.topics.length) return
+  if (target === index) return
   const [item] = form.topics.splice(index, 1)
   form.topics.splice(target, 0, item)
   refreshSort()
+}
+
+function startTopicDrag(index: number, event: DragEvent) {
+  draggingTopicIndex.value = index
+  dragOverTopicIndex.value = null
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', String(index))
+  }
+}
+
+function handleTopicTableDragOver(event: DragEvent) {
+  if (draggingTopicIndex.value === null) return
+  const targetIndex = topicIndexFromEvent(event)
+  if (targetIndex < 0) return
+  event.preventDefault()
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
+  dragOverTopicIndex.value = targetIndex
+}
+
+function handleTopicTableDrop(event: DragEvent) {
+  if (draggingTopicIndex.value === null) return
+  const targetIndex = topicIndexFromEvent(event)
+  if (targetIndex < 0) return
+  event.preventDefault()
+  dropTopic(targetIndex)
+}
+
+function dropTopic(targetIndex: number) {
+  if (draggingTopicIndex.value === null) return
+  moveTopicTo(draggingTopicIndex.value, targetIndex)
+  draggingTopicIndex.value = null
+  dragOverTopicIndex.value = null
+}
+
+function endTopicDrag() {
+  draggingTopicIndex.value = null
+  dragOverTopicIndex.value = null
+}
+
+function topicRowClassName({ row }: { row: TopicPayload }) {
+  const index = form.topics.indexOf(row)
+  return ['topic-sort-row', `topic-sort-row-${index}`, index === dragOverTopicIndex.value ? 'topic-row-drag-over' : ''].filter(Boolean).join(' ')
+}
+
+function topicIndexFromEvent(event: DragEvent) {
+  const target = event.target as HTMLElement | null
+  const row = target?.closest('tr.topic-sort-row')
+  if (!row) return -1
+  const match = Array.from(row.classList).find((name) => name.startsWith('topic-sort-row-'))
+  return match ? Number(match.replace('topic-sort-row-', '')) : -1
 }
 
 async function saveMeeting(showMessage: boolean) {
@@ -147,7 +269,7 @@ async function saveMeeting(showMessage: boolean) {
     return saved as MeetingItem
   } catch (error: any) {
     ElMessage.error(error.message || '保存失败')
-    throw error
+    return null
   } finally {
     saving.value = false
   }
@@ -157,6 +279,7 @@ async function publishMeeting() {
   publishing.value = true
   try {
     const saved = await saveMeeting(false)
+    if (!saved) return
     await ElMessageBox.confirm('发布后将给议题涉及部门秘书生成通知。', '确认发布')
     await api.publish(saved.id)
     ElMessage.success('发布成功')
@@ -172,8 +295,9 @@ async function uploadTopicFile(file: UploadFile) {
   if (!file.raw) return
   uploading.value = true
   try {
-    const currentId = meetingId.value || (await saveMeeting(false)).id
-    const data = await api.importTopics(currentId, file.raw) as ImportResult
+    const data = (meetingId.value
+      ? await api.importTopics(meetingId.value, file.raw)
+      : await api.parseTopics(file.raw)) as ImportResult
     form.topics = data.topics.map((topic, index) => normalizeTopic({ ...topic, sortNo: index + 1 }))
     importMessage.value = `${data.parserMessage || '议题解析成功'}，请核对后点击保存。`
   } catch (error: any) {
@@ -189,7 +313,8 @@ function buildPayload(): MeetingPayload {
     ...form,
     topics: form.topics.map((topic) => ({
       ...topic,
-      reportDepartmentName: departmentName(topic.reportDepartmentId),
+      reportDepartmentId: (topic.reportDepartmentIds || []).join(','),
+      reportDepartmentName: departmentNames(topic.reportDepartmentIds).join(','),
       participantDepartments: departmentNames(topic.participantDepartmentIds).join(',')
     }))
   }
@@ -207,10 +332,14 @@ function normalizeTopic(topic: any): TopicPayload {
     topicType: topic.topicType || '三重一大',
     title: topic.title || '',
     reportDepartmentId: topic.reportDepartmentId ? String(topic.reportDepartmentId) : undefined,
+    reportDepartmentIds: normalizeDepartmentIds(topic.reportDepartmentIds || topic.reportDepartmentId),
     reportDepartmentName: topic.reportDepartmentName,
     participantDepartmentIds: normalizeDepartmentIds(topic.participantDepartmentIds || topic.participantDeptId),
     participantDepartments: topic.participantDepartments || topic.participantDeptName,
     summary: topic.summary || '',
+    conclusion: topic.conclusion || '',
+    notice: topic.notice || '',
+    projectCode: topic.projectCode || topic.project_code || '',
     sortNo: Number(topic.sortNo || form.topics.length + 1)
   }
 }
@@ -222,11 +351,9 @@ function normalizeDepartmentIds(value: unknown): string[] {
 }
 
 function refreshSort() {
-  form.topics.forEach((topic, index) => { topic.sortNo = index + 1 })
-}
-
-function departmentName(id?: string) {
-  return departments.value.find((dept) => dept.id === id)?.name || ''
+  form.topics.forEach((topic, index) => {
+    topic.sortNo = index + 1
+  })
 }
 
 function departmentNames(ids?: string[]) {
@@ -309,6 +436,40 @@ h2 {
 
 .import-tip {
   margin-bottom: 12px;
+}
+
+.sort-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.sort-actions :deep(.el-button) {
+  margin-left: 0;
+}
+
+.drag-sort-button {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: #667085;
+  border-radius: 6px;
+  cursor: grab;
+}
+
+.drag-sort-button:hover {
+  color: #175cd3;
+  background: #eff6ff;
+}
+
+.drag-sort-button:active {
+  cursor: grabbing;
+}
+
+:deep(.topic-row-drag-over > td) {
+  background: #eff6ff !important;
 }
 
 @media (max-width: 1100px) {

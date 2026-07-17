@@ -66,6 +66,11 @@ public class MeetingController {
         return ApiResponse.ok(meetingService.importTopics(id, file));
     }
 
+    @PostMapping("/meetings/topics/parse")
+    public ApiResponse<Map<String, Object>> parseTopics(@RequestPart("file") MultipartFile file) {
+        return ApiResponse.ok(meetingService.parseTopics(file));
+    }
+
     @GetMapping("/meetings/{id}/selection-tasks")
     public ApiResponse<List<Map<String, Object>>> selectionTasks(@PathVariable Long id,
                                                                  @RequestAttribute("currentUser") Map<String, Object> currentUser) {
@@ -77,6 +82,20 @@ public class MeetingController {
                                                       @RequestBody Map<String, Object> request,
                                                       @RequestAttribute("currentUser") Map<String, Object> currentUser) {
         return ApiResponse.ok(meetingService.submitAttendees(topicId, request, currentUser));
+    }
+
+    @PutMapping("/topics/{topicId}")
+    public ApiResponse<Map<String, Object>> updateTopic(@PathVariable Long topicId,
+                                                        @RequestBody Map<String, Object> request,
+                                                        @RequestAttribute("currentUser") Map<String, Object> currentUser) {
+        return ApiResponse.ok(meetingService.updateTopicDetails(topicId, request, currentUser));
+    }
+
+    @PostMapping("/topics/{topicId}/notify-preparation")
+    public ApiResponse<Map<String, Object>> notifyTopicPreparation(@PathVariable Long topicId,
+                                                                   @RequestBody(required = false) Map<String, Object> request,
+                                                                   @RequestAttribute("currentUser") Map<String, Object> currentUser) {
+        return ApiResponse.ok(meetingService.notifyTopicPreparation(topicId, request, currentUser));
     }
 
     @PostMapping("/meetings/{id}/attendees/confirm")
@@ -110,11 +129,6 @@ public class MeetingController {
     @PostMapping("/topics/{topicId}/end")
     public ApiResponse<Map<String, Object>> endTopic(@PathVariable Long topicId, @RequestBody(required = false) Map<String, Object> request) {
         return ApiResponse.ok(meetingService.endTopic(topicId, request == null ? java.util.Collections.<String, Object>emptyMap() : request));
-    }
-
-    @PutMapping("/topics/{topicId}/conclusion")
-    public ApiResponse<Map<String, Object>> conclusion(@PathVariable Long topicId, @RequestBody Map<String, Object> request) {
-        return ApiResponse.ok(meetingService.saveConclusion(topicId, request));
     }
 
     @GetMapping("/meetings/{id}/dashboard")

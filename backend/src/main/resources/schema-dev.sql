@@ -102,6 +102,8 @@ create table t_meeting_attendee (
     user_name varchar(500) not null,
     attendee_type varchar(32) not null,
     selected_by varchar(500),
+    selected_source varchar(32) not null,
+    selected_dept_id varchar(500),
     created_at timestamp not null default now(),
     confirm_status varchar(32) not null default 'PENDING',
     confirmed_by varchar(500),

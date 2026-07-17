@@ -20,8 +20,7 @@
     <van-cell-group inset title="会议结论">
       <div v-for="topic in topics" :key="`conclusion-${topic.id}`" class="conclusion-item">
         <div class="conclusion-title">第 {{ topic.sortNo }} 项</div>
-        <van-field v-model="conclusions[topic.id]" autosize type="textarea" rows="2" placeholder="录入会议结论" />
-        <van-button block size="small" type="primary" @click="saveConclusion(topic.id)">保存结论</van-button>
+        <p>{{ topic.conclusion || '暂未录入会议结论' }}</p>
       </div>
     </van-cell-group>
   </div>
@@ -36,14 +35,10 @@ import { api } from '@/api/meeting'
 const route = useRoute()
 const meetingId = computed(() => Number(route.params.id))
 const dashboard = ref<any>(null)
-const conclusions = ref<Record<number, string>>({})
 const topics = computed(() => dashboard.value?.topics || [])
 
 async function load() {
   dashboard.value = await api.dashboard(meetingId.value)
-  const next: Record<number, string> = {}
-  topics.value.forEach((topic: any) => { next[topic.id] = topic.conclusion || '' })
-  conclusions.value = next
 }
 
 function hasRunning(row: any) {
@@ -67,16 +62,6 @@ async function end(topicId: number) {
     await load()
   } catch (error: any) {
     showFailToast(error.message || '结束失败')
-  }
-}
-
-async function saveConclusion(topicId: number) {
-  try {
-    await api.saveConclusion(topicId, { conclusion: conclusions.value[topicId] || '' })
-    showSuccessToast('已保存')
-    await load()
-  } catch (error: any) {
-    showFailToast(error.message || '保存失败')
   }
 }
 

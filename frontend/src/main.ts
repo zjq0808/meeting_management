@@ -11,6 +11,21 @@ import { initializeWeCom, initResponsiveRem } from './api/wecom'
 
 initResponsiveRem()
 
+function ignoreResizeObserverWarnings() {
+  window.addEventListener('error', (event) => {
+    const message = String(event.message || '')
+    if (
+      message.includes('ResizeObserver loop completed with undelivered notifications') ||
+      message.includes('ResizeObserver loop limit exceeded')
+    ) {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+    }
+  }, true)
+}
+
+ignoreResizeObserverWarnings()
+
 initializeWeCom()
   .then(() => {
     createApp(App).use(store).use(router).use(ElementPlus).use(Vant).mount('#app')

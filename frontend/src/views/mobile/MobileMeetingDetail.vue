@@ -20,10 +20,6 @@
             <small>参会人员</small>
             <strong>{{ attendees.length }} 人</strong>
           </button>
-          <button @click="conclusionVisible = true">
-            <small>会议结论</small>
-            <strong>{{ concludedCount }} / {{ topics.length }}</strong>
-          </button>
         </div>
       </section>
 
@@ -56,13 +52,6 @@
         <h3>参会人员名单</h3>
         <van-cell v-for="user in attendees" :key="user.id" :title="user.realName || user.username" :label="`${user.departmentName || '-'} / ${user.employeeNo || user.id}`" />
         <van-empty v-if="attendees.length === 0" description="尚未选择参会人员" />
-      </section>
-    </van-popup>
-
-    <van-popup v-model:show="conclusionVisible" round position="bottom" :style="{ maxHeight: '72vh' }">
-      <section class="popup-panel">
-        <h3>会议结论</h3>
-        <van-cell v-for="topic in topics" :key="`c-${topic.id}`" :title="`第 ${topic.sortNo} 项：${topic.title}`" :label="topic.conclusion || '暂未录入'" />
       </section>
     </van-popup>
 
@@ -108,7 +97,6 @@ const meeting = ref<MeetingItem | null>(null)
 const users = ref<UserItem[]>([])
 const loading = ref(false)
 const peopleVisible = ref(false)
-const conclusionVisible = ref(false)
 const pickerVisible = ref(false)
 const singleConclusionVisible = ref(false)
 const submitting = ref(false)
@@ -121,7 +109,6 @@ const user = computed(() => store.state.user)
 const topics = computed<TopicItem[]>(() => meeting.value?.topics || [])
 const attendees = computed<UserItem[]>(() => meeting.value?.attendees || [])
 const title = computed(() => meeting.value ? `${meeting.value.meetingDate || ''} ${meeting.value.periodNo || ''} 三重一大会议` : '会议详情')
-const concludedCount = computed(() => topics.value.filter((topic) => !!topic.conclusion).length)
 const pickerTitle = computed(() => activeType.value === 'REPORT' ? '选择汇报人' : '选择参会人')
 const filteredCandidates = computed(() => {
   const deptId = activeType.value === 'REPORT' ? activeTopic.value?.reportDepartmentId : user.value?.departmentId
@@ -165,13 +152,13 @@ function canSelectParticipant(topic: TopicItem) {
 }
 
 function canSelectRole() {
-  return ['SECRETARY', 'LEADER'].includes(user.value?.role || '')
+  return ['ADMIN', 'SECRETARY'].includes(user.value?.role || '')
 }
 
 function openPicker(topic: TopicItem, type: 'REPORT' | 'PARTAKE') {
   activeTopic.value = topic
   activeType.value = type
-  selectedIds.value = (topic.attendees || []).filter((item: any) => item.attendeeType === type || (type === 'PARTAKE' && item.attendeeType === 'PARTICIPANT')).map((item: any) => String(item.id || item.userId))
+  selectedIds.value = (topic.attendees || []).filter((item: any) => item.attendeeType === type).map((item: any) => String(item.id || item.userId))
   keyword.value = ''
   pickerVisible.value = true
 }

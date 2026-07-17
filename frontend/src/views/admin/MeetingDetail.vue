@@ -8,7 +8,6 @@
       <div class="top-actions">
         <el-button :icon="Back" @click="$router.push('/meetings')">返回</el-button>
         <el-button v-if="isAdmin" type="primary" :icon="Edit" @click="$router.push(`/meetings/${meetingId}/edit`) ">编辑</el-button>
-        <el-button :icon="LinkIcon" @click="copyMobileLink">分享移动详情</el-button>
       </div>
     </div>
 
@@ -40,7 +39,7 @@
       </div>
       <el-table v-loading="loading" :data="topics" border empty-text="暂无议题">
         <el-table-column label="序号" width="76" align="center"><template #default="{ $index }">{{ pad($index + 1) }}</template></el-table-column>
-        <el-table-column label="议题名称" min-width="260"><template #default="{ row }"><strong>{{ row.title }}</strong><p class="topic-summary">{{ row.summary || '暂无简述' }}</p></template></el-table-column>
+        <el-table-column label="议题名称" min-width="260"><template #default="{ row }"><strong>{{ row.title }}</strong><p class="topic-summary">{{ row.summary || '暂无会议纪要' }}</p></template></el-table-column>
         <el-table-column label="汇报部门" width="160"><template #default="{ row }">{{ row.reportDepartmentName || '-' }}</template></el-table-column>
         <el-table-column label="参会部门" min-width="180"><template #default="{ row }">{{ row.participantDepartments || '-' }}</template></el-table-column>
         <el-table-column label="状态" width="110"><template #default="{ row }"><el-tag>{{ topicStatusLabel(row.status) }}</el-tag></template></el-table-column>
@@ -50,23 +49,11 @@
               <el-button v-if="canSelectReporter(row)" size="small" type="primary" @click="openSelector(row, 'REPORT')">选择汇报人</el-button>
               <el-button v-if="canSelectParticipant(row)" size="small" type="primary" plain @click="openSelector(row, 'PARTAKE')">选择参会人</el-button>
               <el-button v-if="canShare(row)" size="small" :icon="Share" @click="shareTopic(row)">分享</el-button>
-              <el-button size="small" link type="primary" @click="showConclusion(row)">查看结论</el-button>
+              <el-button v-if="canViewTopic(row)" size="small" link type="primary" @click="showConclusion(row)">查看</el-button>
             </div>
           </template>
         </el-table-column>
       </el-table>
-    </section>
-
-    <section class="panel conclusion-section">
-      <div class="panel-header">
-        <h3><el-icon><Tickets /></el-icon>会议结论纪要</h3>
-      </div>
-      <div class="conclusion-list">
-        <article v-for="topic in topics" :key="`conclusion-${topic.id}`" class="conclusion-item">
-          <strong>第 {{ topic.sortNo }} 项：{{ topic.title }}</strong>
-          <p>{{ topic.conclusion || '暂未录入会议结论' }}</p>
-        </article>
-      </div>
     </section>
 
     <el-drawer v-model="attendeeVisible" title="本次会议参会人员" size="560px">
@@ -118,7 +105,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useStore } from 'vuex'
 import { ElMessage } from 'element-plus'
-import { Back, Document, Edit, Link as LinkIcon, List, Refresh, Share, Tickets, View } from '@element-plus/icons-vue'
+import { Back, Document, Edit, List, Refresh, Share, Tickets, View } from '@element-plus/icons-vue'
 import { api, DepartmentItem, MeetingItem, TopicItem, UserItem } from '@/api/meeting'
 
 const route = useRoute()
@@ -187,7 +174,17 @@ function canSelectParticipant(topic: TopicItem) {
 }
 
 function canSelectRole() {
-  return ['SECRETARY', 'LEADER'].includes(currentUser.value?.role || '')
+  return ['ADMIN', 'SECRETARY'].includes(currentUser.value?.role || '')
+}
+
+function canViewTopic(topic: TopicItem) {
+  const currentUserId = String(currentUser.value?.id || currentUser.value?.userId || currentUser.value?.employeeNo || '')
+  if (!currentUserId) return false
+  return (topic.attendees || []).some((attendee: any) => {
+    const attendeeType = attendee.attendeeType || attendee.attendee_type
+    const attendeeId = String(attendee.userId || attendee.user_id || attendee.id || '')
+    return ['REPORT', 'PARTAKE'].includes(attendeeType) && attendeeId === currentUserId
+  })
 }
 
 function canShare(topic: TopicItem) {
@@ -199,7 +196,7 @@ function openSelector(topic: TopicItem, type: 'REPORT' | 'PARTAKE') {
   activeType.value = type
   selectedDepartment.value = type === 'REPORT' ? (topic.reportDepartmentId || '') : (currentUser.value?.departmentId || '')
   userKeyword.value = ''
-  selectedIds.value = (topic.attendees || []).filter((item: any) => item.attendeeType === type || (type === 'PARTAKE' && item.attendeeType === 'PARTICIPANT')).map((item: any) => String(item.id || item.userId))
+  selectedIds.value = (topic.attendees || []).filter((item: any) => item.attendeeType === type).map((item: any) => String(item.id || item.userId))
   selectorVisible.value = true
 }
 
@@ -229,7 +226,6 @@ async function shareTopic(topic: TopicItem) {
   ElMessage.success('移动端链接已复制，可发给科组长处理')
 }
 
-async function copyMobileLink() {
   await copyText(`${window.location.origin}/mobile/meetings/${meetingId.value}`)
   ElMessage.success('移动详情链接已复制')
 }

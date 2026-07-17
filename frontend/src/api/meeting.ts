@@ -24,6 +24,12 @@ export interface UserItem {
   departmentId?: string
   departmentName?: string
   mobile?: string
+  attendeeType?: 'REPORT' | 'PARTAKE'
+  selectedSource?: 'ADMIN' | 'DEPARTMENT'
+  selectedDeptId?: string
+  topicId?: number
+  topicSortNo?: number
+  topicTitle?: string
 }
 
 export interface TopicPayload {
@@ -31,10 +37,14 @@ export interface TopicPayload {
   topicType: string
   title: string
   reportDepartmentId?: string
+  reportDepartmentIds?: string[]
   reportDepartmentName?: string
   participantDepartments?: string
   participantDepartmentIds?: string[]
   summary?: string
+  conclusion?: string
+  notice?: string
+  projectCode?: string
   sortNo: number
 }
 
@@ -48,6 +58,12 @@ export interface TopicItem extends TopicPayload {
   participantDeptId?: string
   participantDeptName?: string
   reportDepartmentSigned?: boolean | number
+  canSelectReporter?: boolean
+  canSelectParticipant?: boolean
+  canShare?: boolean
+  canNotify?: boolean
+  canViewTopic?: boolean
+  viewLabel?: string
 }
 
 export interface MeetingItem {
@@ -59,6 +75,7 @@ export interface MeetingItem {
   leaders?: string
   content?: string
   status: string
+  topicCount?: number
   topics?: TopicItem[]
   attendees?: UserItem[]
   topicSignStats?: Array<Record<string, unknown>>
@@ -120,15 +137,21 @@ export const api = {
     form.append('file', file)
     return http.post(`/meetings/${id}/topics/import`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
   },
+  parseTopics: (file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    return http.post('/meetings/topics/parse', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
   selectionTasks: (id: number) => http.get(`/meetings/${id}/selection-tasks`),
-  submitAttendees: (topicId: number, payload: { userIds: string[]; attendeeType?: 'LEADER' | 'SHARE' | 'REPORT' | 'PARTAKE' | 'PARTICIPANT' }) => http.post(`/topics/${topicId}/attendees`, payload),
+  submitAttendees: (topicId: number, payload: { userIds: string[]; attendeeType: 'REPORT' | 'PARTAKE' }) => http.post(`/topics/${topicId}/attendees`, payload),
+  updateTopic: (topicId: number, payload: Pick<TopicPayload, 'title' | 'topicType' | 'summary'> & { conclusion?: string }) => http.put(`/topics/${topicId}`, payload),
+  notifyTopicPreparation: (topicId: number, payload?: { attendeeUserIds?: string[]; shareUserIds?: string[] }) => http.post(`/topics/${topicId}/notify-preparation`, payload || {}),
   confirmAttendees: (meetingId: number) => http.post(`/meetings/${meetingId}/attendees/confirm`),
   createSignQrCode: (meetingId: number) => http.post(`/meetings/${meetingId}/sign-qrcode`),
   signInPreview: (token: string) => http.get('/sign-in/preview', { params: { token } }),
   signIn: (payload: { token: string }) => http.post('/sign-in', payload),
   startTopic: (topicId: number) => http.post(`/topics/${topicId}/start`),
   endTopic: (topicId: number, payload?: { actualMinutes?: number }) => http.post(`/topics/${topicId}/end`, payload || {}),
-  saveConclusion: (topicId: number, payload: { conclusion: string; actualMinutes?: number }) => http.put(`/topics/${topicId}/conclusion`, payload),
   dashboard: (meetingId: number) => http.get(`/meetings/${meetingId}/dashboard`),
   signinDashboard: (meetingId: number) => http.get(`/meetings/${meetingId}/signin-dashboard`)
 }

@@ -11,6 +11,7 @@ import SigninDashboard from '@/views/admin/SigninDashboardModern.vue'
 import MobileMeetingList from '@/views/mobile/MobileMeetingListModern.vue'
 import MobileMeetingDetail from '@/views/mobile/MobileMeetingDetailModern.vue'
 import MobileMeetingConsole from '@/views/mobile/MobileMeetingConsoleModern.vue'
+import MobileSigninDashboard from '@/views/mobile/MobileSigninDashboardModern.vue'
 import SelectionView from '@/views/mobile/SelectionView.vue'
 import SignInView from '@/views/mobile/SignInView.vue'
 import ProgressView from '@/views/mobile/ProgressViewModern.vue'
@@ -35,6 +36,7 @@ const routes: Array<RouteRecordRaw> = [
   { path: '/mobile/meetings', name: 'mobile-meetings', component: MobileMeetingList, meta: { requiresAuth: true } },
   { path: '/mobile/meetings/:id', name: 'mobile-meeting-detail', component: MobileMeetingDetail, meta: { requiresAuth: true }, props: true },
   { path: '/mobile/meetings/:id/console', name: 'mobile-meeting-console', component: MobileMeetingConsole, meta: { requiresAuth: true }, props: true },
+  { path: '/mobile/meetings/:id/signin-dashboard', name: 'mobile-signin-dashboard', component: MobileSigninDashboard, meta: { requiresAuth: true }, props: true },
   { path: '/mobile/selection/:meetingId', name: 'mobile-selection', component: SelectionView, meta: { requiresAuth: true }, props: true },
   { path: '/mobile/sign-in', name: 'mobile-sign-in', component: SignInView, meta: { requiresAuth: true } },
   { path: '/mobile/progress/:meetingId', name: 'mobile-progress', component: ProgressView, meta: { requiresAuth: true }, props: true }

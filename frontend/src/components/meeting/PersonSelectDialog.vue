@@ -13,10 +13,11 @@
         </button>
       </aside>
       <section>
+        <el-alert v-if="hint" :title="hint" type="warning" :closable="false" show-icon class="person-selector__hint" />
         <el-input v-model="keyword" clearable placeholder="搜索姓名或工号" />
         <el-checkbox-group v-model="checked" class="person-selector__grid">
           <label v-for="user in filteredUsers" :key="user.id" class="person-selector__item">
-            <el-checkbox :label="String(user.id)" />
+            <el-checkbox :label="String(user.id)" :disabled="(disabledIds || []).includes(String(user.id))" />
             <span class="person-avatar">{{ firstChar(user.realName || user.username) }}</span>
             <span>
               <strong>{{ user.realName || user.username }}</strong>
@@ -29,7 +30,7 @@
     </div>
     <template #footer>
       <el-button @click="visible = false">取消</el-button>
-      <el-button type="primary" :loading="loading" @click="$emit('confirm', checked)">保存</el-button>
+      <el-button type="primary" :loading="loading" @click="$emit('confirm', checked)">{{ confirmText || '保存' }}</el-button>
     </template>
   </el-dialog>
 </template>
@@ -44,7 +45,10 @@ const props = defineProps<{
   departments: DepartmentItem[]
   users: UserItem[]
   selectedIds: string[]
+  disabledIds?: string[]
   defaultDepartment?: string
+  hint?: string
+  confirmText?: string
   loading?: boolean
 }>()
 const emit = defineEmits<{

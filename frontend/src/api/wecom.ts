@@ -60,7 +60,7 @@ export function initResponsiveRem(maxWidth = 550) {
       return
     }
     const baseWidth = Math.min(width, maxWidth)
-    document.documentElement.style.fontSize = `${(100 * baseWidth) / 750}px`
+    document.documentElement.style.fontSize = `${(75 * baseWidth) / 750}px`
   }
   update()
   window.addEventListener('resize', update)

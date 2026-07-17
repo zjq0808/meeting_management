@@ -437,8 +437,7 @@ Authorization: Bearer {{token}}
 规则：
 
 - `SECRETARY` 返回本部门作为汇报部门或参会部门的议题。
-- `LEADER` 返回本人已被确认作为 `LEADER` 参加的议题。
-- 其他角色返回全部议题，但提交人员时仍会校验权限。
+- 其他角色返回全部议题，但只有管理员和有权限的秘书可以提交人员。
 
 ### 6.2 提交议题参会人员
 
@@ -452,7 +451,7 @@ Content-Type: application/json
 
 ```json
 {
-  "attendeeType": "LEADER",
+  "attendeeType": "REPORT",
   "userIds": ["U0004"]
 }
 ```
@@ -461,18 +460,16 @@ Content-Type: application/json
 
 | 值 | 说明 |
 | --- | --- |
-| LEADER | 科组长，通常由部门秘书选择 |
 | REPORT | 汇报人 |
-| SHARE | 分享/邀请人员 |
-| PARTAKE | 普通参会人，通常由科组长选择 |
-| PARTICIPANT | 兼容旧入参，后端会转换为 `PARTAKE` |
+| PARTAKE | 参会人 |
 
 规则：
 
-- `SECRETARY` 当前只能选择 `LEADER`。
-- `LEADER` 只能选择 `PARTAKE`。
-- 同一提交人重复提交同一议题同一类型，会先删除旧名单再插入新名单。
-- 新插入参会记录默认 `confirm_status=PENDING`，确认前被选人员看不到会议。
+- 仅接受 `REPORT`、`PARTAKE`，`userIds` 可为空以清空有权维护的名单。
+- 管理员可维护全部来源记录；管理员新增记录直接确认为 `CONFIRMED`。
+- 秘书可维护本汇报部门的 `REPORT` 和本参会部门的 `PARTAKE`；新增记录为 `PENDING`。
+- 管理员来源记录只能由管理员删除；部门来源记录可由本部门秘书或管理员删除。
+- 仅 `PUBLISHED`、`IN_PROGRESS` 状态允许调整人员。
 - 单议题最多 `meeting.max-attendees-per-topic` 人，默认 60。
 
 响应：
@@ -491,7 +488,9 @@ Content-Type: application/json
         "user_id": "U0004",
         "username": "Planning Leader",
         "employee_no": "U0004",
-        "attendee_type": "LEADER",
+        "attendee_type": "REPORT",
+        "selected_source": "DEPARTMENT",
+        "selected_dept_id": "D002",
         "confirm_status": "PENDING",
         "sign_status": "UNSIGNED"
       }
@@ -504,14 +503,14 @@ Content-Type: application/json
 
 ```http
 POST {{baseUrl}}/meetings/{{meetingId}}/attendees/confirm
-Authorization: Bearer {{secretaryOrLeaderToken}}
+Authorization: Bearer {{secretaryToken}}
 ```
 
 规则：
 
-- 仅 `SECRETARY` 和 `LEADER` 可调用。
+- 仅 `SECRETARY` 可调用。
 - 会议必须已发布。
-- 只确认当前登录人自己选择且仍为 `PENDING` 的人员。
+- 确认本部门来源且仍为 `PENDING` 的人员。
 - 确认后：
   - `confirm_status` 改为 `CONFIRMED`
   - 写入 `confirmed_by`、`confirmed_at`
@@ -681,10 +680,10 @@ Content-Type: application/json
 - `actual_minutes` 优先使用手动值；未传则按 `start_time` 到当前时间计算，最小 1 分钟。
 - 如果全部议题都已 `FINISHED`，会议状态改为 `FINISHED`。
 
-### 8.3 保存会议结论
+### 8.3 更新议题信息
 
 ```http
-PUT {{baseUrl}}/topics/{{topicId}}/conclusion
+PUT {{baseUrl}}/topics/{{topicId}}
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 ```
@@ -693,12 +692,14 @@ Content-Type: application/json
 
 ```json
 {
-  "conclusion": "同意按程序推进",
-  "actualMinutes": 12
+  "title": "技术平台升级事项",
+  "topicType": "重大项目",
+  "summary": "会议讨论过程及决议纪要",
+  "conclusion": "同意按程序推进"
 }
 ```
 
-响应 `data` 为更新后的议题对象。
+仅会议管理员可调用，响应 `data` 为更新后的议题对象。会议控制台只读展示 `conclusion`。
 
 ## 9. 看板接口
 
@@ -817,7 +818,7 @@ Authorization: Bearer {{token}}
 | report_dept_name | 汇报部门名称快照 |
 | participant_dept_id | 参会部门 ID，逗号分隔 |
 | participant_dept_name | 参会部门名称，逗号分隔 |
-| summary | 议题简述 |
+| summary | 会议纪要 |
 | sort_no | 议题排序 |
 | status | 议题状态 |
 | start_time | 开始时间 |
@@ -839,8 +840,10 @@ Authorization: Bearer {{token}}
 | topic_id | 议题 ID |
 | user_id | 参会人用户 ID |
 | user_name | 参会人姓名快照 |
-| attendee_type | `LEADER/SHARE/REPORT/PARTAKE` |
+| attendee_type | `REPORT/PARTAKE` |
 | selected_by | 选择人员的用户 ID |
+| selected_source | 选择来源，`ADMIN/DEPARTMENT` |
+| selected_dept_id | 部门来源记录的所属部门 ID |
 | created_at | 创建时间 |
 | confirm_status | `PENDING/CONFIRMED` |
 | confirmed_by | 确认人用户 ID |
@@ -884,12 +887,11 @@ Authorization: Bearer {{token}}
 2. `POST /meetings` 创建会议和议题。
 3. `POST /meetings/{id}/publish` 发布会议。
 4. 用 `U0002` 登录，调用 `GET /meetings/{id}/selection-tasks` 查看秘书任务。
-5. 用 `U0002` 调用 `POST /topics/{topicId}/attendees` 选择 `U0004` 为 `LEADER`。
+5. 用 `U0002` 调用 `POST /topics/{topicId}/attendees` 选择 `U0004` 为 `REPORT`。
 6. 用 `U0002` 调用 `POST /meetings/{id}/attendees/confirm` 确认科组长。
 7. 用 `U0004` 登录，选择 `U0006` 为 `PARTAKE`。
 8. 用 `U0004` 调用确认接口。
 9. 用 `U0001` 调用 `POST /meetings/{id}/sign-qrcode` 生成签到 token。
 10. 用 `U0006` 登录，调用 `GET /sign-in/preview?token=...` 查看本人议题。
 11. 用 `U0006` 调用 `POST /sign-in` 签到。
-12. 用 `U0001` 调用开始议题、结束议题、保存结论、dashboard。
-
+12. 用 `U0001` 调用开始议题、结束议题、更新议题信息、dashboard。

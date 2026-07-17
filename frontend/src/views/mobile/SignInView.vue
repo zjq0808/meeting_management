@@ -84,7 +84,7 @@ import { api, SignInPreview } from '@/api/meeting'
 const texts = {
   title: '\u4f1a\u8bae\u7b7e\u5230',
   missingToken: '\u7f3a\u5c11\u7b7e\u5230\u4e8c\u7ef4\u7801\u53c2\u6570',
-  currentMeeting: 'Current Meeting',
+  currentMeeting: '当前会议',
   relatedTopics: '\u76f8\u5173\u8bae\u9898',
   signedTopics: '\u5df2\u7b7e\u8bae\u9898',
   myTopics: '\u6211\u7684\u76f8\u5173\u8bae\u9898',
@@ -105,11 +105,8 @@ const texts = {
   signSuccess: '\u7b7e\u5230\u6210\u529f',
   signFail: '\u7b7e\u5230\u5931\u8d25',
   loadFail: '\u52a0\u8f7d\u7b7e\u5230\u4fe1\u606f\u5931\u8d25',
-  leader: '\u79d1\u7ec4\u957f',
   report: '\u6c47\u62a5\u4eba',
-  partake: '\u53c2\u4f1a\u4eba',
-  share: '\u5206\u4eab\u4eba',
-  participant: '\u53c2\u4f1a\u4eba'
+  partake: '\u53c2\u4f1a\u4eba'
 }
 
 const route = useRoute()
@@ -131,10 +128,8 @@ function isSigned(topic: any) {
 
 function attendeeTypeText(type?: string) {
   const value = String(type || '').toUpperCase()
-  if (value === 'LEADER') return texts.leader
   if (value === 'REPORT') return texts.report
-  if (value === 'SHARE') return texts.share
-  if (value === 'PARTAKE' || value === 'PARTICIPANT') return texts.participant
+  if (value === 'PARTAKE') return texts.partake
   return value || '-'
 }
 

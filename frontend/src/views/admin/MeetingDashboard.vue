@@ -25,7 +25,6 @@
         <template #default="{ row }">
           <el-button size="small" type="primary" :disabled="row.status !== 'WAITING'" @click="start(row.id)">开始</el-button>
           <el-button size="small" type="warning" :disabled="row.status !== 'RUNNING'" @click="end(row.id)">结束</el-button>
-          <el-button size="small" @click="openConclusion(row)">结论</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -35,7 +34,7 @@
 <script lang="ts" setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { api } from '@/api/meeting'
 
 const route = useRoute()
@@ -54,13 +53,6 @@ async function start(topicId: number) {
 
 async function end(topicId: number) {
   await api.endTopic(topicId)
-  await load()
-}
-
-async function openConclusion(row: any) {
-  const { value } = await ElMessageBox.prompt('填写会议结论', '议题结论', { inputType: 'textarea', inputValue: row.conclusion || '' })
-  await api.saveConclusion(row.id, { conclusion: value, actualMinutes: row.actualMinutes })
-  ElMessage.success('保存成功')
   await load()
 }
 

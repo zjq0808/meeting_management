@@ -11,6 +11,10 @@
     <van-popup v-model:show="pickerVisible" position="bottom" round>
       <div class="picker">
         <h3>{{ activeTopic?.title }}</h3>
+        <van-tabs v-model:active="attendeeType">
+          <van-tab title="汇报人" name="REPORT" />
+          <van-tab title="参会人" name="PARTAKE" />
+        </van-tabs>
         <van-checkbox-group v-model="selectedIds">
           <van-cell-group>
             <van-cell v-for="user in candidates" :key="user.id" clickable :title="user.realName || user.username" :label="`${user.departmentName || '-'} / ${user.employeeNo || '-'}`" @click="toggle(user.id)">
@@ -36,7 +40,8 @@ const store = useStore()
 const meetingId = Number(route.params.meetingId)
 const tasks = ref<any[]>([])
 const candidates = ref<any[]>([])
-const selectedIds = ref<number[]>([])
+const selectedIds = ref<string[]>([])
+const attendeeType = ref<'REPORT' | 'PARTAKE'>('REPORT')
 const activeTopic = ref<any>(null)
 const pickerVisible = ref(false)
 const submitting = ref(false)
@@ -44,8 +49,7 @@ const user = computed(() => store.state.user)
 
 async function load() {
   tasks.value = await api.selectionTasks(meetingId) as any[]
-  const role = user.value?.role === 'LEADER' ? 'PARTICIPANT' : 'LEADER'
-  candidates.value = await api.users({ departmentId: user.value?.departmentId, role }) as any[]
+  candidates.value = await api.users({ departmentId: user.value?.departmentId }) as any[]
 }
 
 function openPicker(topic: any) {
@@ -54,7 +58,7 @@ function openPicker(topic: any) {
   pickerVisible.value = true
 }
 
-function toggle(id: number) {
+function toggle(id: string) {
   const index = selectedIds.value.indexOf(id)
   if (index >= 0) selectedIds.value.splice(index, 1)
   else selectedIds.value.push(id)
@@ -64,7 +68,7 @@ async function submit() {
   if (!activeTopic.value) return
   submitting.value = true
   try {
-    await api.submitAttendees(activeTopic.value.id, { userIds: selectedIds.value, attendeeType: user.value?.role === 'LEADER' ? 'PARTICIPANT' : 'LEADER' })
+    await api.submitAttendees(activeTopic.value.id, { userIds: selectedIds.value, attendeeType: attendeeType.value })
     showSuccessToast('提交成功')
     pickerVisible.value = false
     await load()

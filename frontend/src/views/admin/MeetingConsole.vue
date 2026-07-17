@@ -24,12 +24,11 @@
       <el-table-column prop="reportDepartmentName" label="汇报部门" width="160" />
       <el-table-column label="状态" width="110"><template #default="{ row }"><el-tag>{{ topicStatus(row.status) }}</el-tag></template></el-table-column>
       <el-table-column prop="actualMinutes" label="实际时长" width="110" />
-      <el-table-column label="会议结论" min-width="260"><template #default="{ row }"><el-input v-model="conclusions[row.id]" type="textarea" :rows="2" placeholder="录入会议结论" /></template></el-table-column>
-      <el-table-column label="操作" width="260" fixed="right">
+      <el-table-column prop="conclusion" label="会议结论" min-width="260" />
+      <el-table-column label="操作" width="180" fixed="right">
         <template #default="{ row }">
           <el-button size="small" type="primary" :disabled="row.status === 'RUNNING' || hasOtherRunning(row)" @click="start(row.id)">开始</el-button>
           <el-button size="small" type="warning" :disabled="row.status !== 'RUNNING'" @click="end(row.id)">结束</el-button>
-          <el-button size="small" @click="saveConclusion(row.id)">保存结论</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -45,14 +44,10 @@ import { api } from '@/api/meeting'
 const route = useRoute()
 const meetingId = computed(() => Number(route.params.id))
 const dashboard = ref<any>(null)
-const conclusions = ref<Record<number, string>>({})
 const topics = computed(() => dashboard.value?.topics || [])
 
 async function load() {
   dashboard.value = await api.dashboard(meetingId.value)
-  const next: Record<number, string> = {}
-  topics.value.forEach((topic: any) => { next[topic.id] = topic.conclusion || '' })
-  conclusions.value = next
 }
 
 function hasOtherRunning(row: any) {
@@ -76,16 +71,6 @@ async function end(topicId: number) {
     await load()
   } catch (error: any) {
     ElMessage.error(error.message || '结束失败')
-  }
-}
-
-async function saveConclusion(topicId: number) {
-  try {
-    await api.saveConclusion(topicId, { conclusion: conclusions.value[topicId] || '' })
-    ElMessage.success('结论已保存')
-    await load()
-  } catch (error: any) {
-    ElMessage.error(error.message || '保存失败')
   }
 }
 
