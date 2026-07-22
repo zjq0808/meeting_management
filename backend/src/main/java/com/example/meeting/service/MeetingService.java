@@ -63,6 +63,10 @@ public class MeetingService {
     @Transactional
     public Map<String, Object> updateMeeting(Long meetingId, Map<String, Object> request, Map<String, Object> currentUser) {
         assertAdmin(currentUser);
+        Map<String, Object> oldMeeting = requireMeeting(meetingId);
+        boolean shouldNotifyOrderChange = shouldNotifyTopicOrderChange(oldMeeting);
+        Map<Long, Integer> oldTopicSortNos = topicSortNoMap(meetingMapper.listTopics(meetingId));
+        Map<Long, Integer> changedTopicSortNos = new HashMap<Long, Integer>();
         request.put("id", meetingId);
         meetingMapper.updateMeeting(request);
         int sort = 1;
@@ -70,10 +74,16 @@ public class MeetingService {
         for (Map<String, Object> topic : topicsFrom(request)) {
             topic.put("meetingId", meetingId);
             prepareTopicForSave(topic, sort);
-            if (Maps.longValue(topic, "id") == null) {
+            Long topicId = Maps.longValue(topic, "id");
+            if (topicId == null) {
                 meetingMapper.insertTopic(topic);
             } else {
                 meetingMapper.updateTopic(topic);
+                Integer oldSortNo = oldTopicSortNos.get(topicId);
+                Integer newSortNo = Maps.intValue(topic, "sortNo", "sort_no");
+                if (shouldNotifyOrderChange && oldSortNo != null && newSortNo != null && !oldSortNo.equals(newSortNo)) {
+                    changedTopicSortNos.put(topicId, newSortNo);
+                }
             }
             Long savedTopicId = Maps.longValue(topic, "id");
             if (savedTopicId != null) {
@@ -82,6 +92,9 @@ public class MeetingService {
             sort++;
         }
         meetingMapper.deleteTopicsNotIn(meetingId, keptTopicIds);
+        for (Map.Entry<Long, Integer> entry : changedTopicSortNos.entrySet()) {
+            notifyTopicOrderChanged(meetingMapper.findTopic(entry.getKey()), entry.getValue());
+        }
         return detail(meetingId);
     }
 
@@ -255,6 +268,14 @@ public class MeetingService {
                     "ADMIN".equals(Maps.stringValue(currentUser, "role")) ? null : Maps.stringValue(currentUser, "departmentId", "department_id"),
                     "PENDING", null, null);
         }
+        recordOperation(meetingId, topicId,
+                "REPORT".equals(attendeeType) ? "SELECT_REPORTER" : "SELECT_PARTICIPANT",
+                "REPORT".equals(attendeeType) ? "选择汇报人" : "选择参会人",
+                currentUser,
+                usersToInsert,
+                "议题《" + Maps.stringValue(topic, "title") + "》"
+                        + ("REPORT".equals(attendeeType) ? "选择汇报人" : "选择参会人")
+                        + "：" + joinUserNames(usersToInsert));
         notifySubmitSuccess(topic, submitter);
         Map<String, Object> result = new HashMap<String, Object>();
         result.put("topic", meetingMapper.findTopic(topicId));
@@ -472,6 +493,12 @@ public class MeetingService {
             meetingMapper.insertNotification(notice);
             notificationSender.send(notice);
         }
+        recordOperation(meetingId, topicId,
+                "SHARE_TOPIC",
+                "分享议题",
+                currentUser,
+                targets,
+                "分享议题《" + Maps.stringValue(topic, "title") + "》给：" + joinUserNames(targets));
         Map<String, Object> result = new HashMap<String, Object>();
         result.put("meetingId", meetingId);
         result.put("topicId", topicId);
@@ -640,6 +667,63 @@ public class MeetingService {
         notificationSender.send(notice);
     }
 
+    private boolean shouldNotifyTopicOrderChange(Map<String, Object> meeting) {
+        String status = Maps.stringValue(meeting, "status");
+        return status != null && !"DRAFT".equals(status);
+    }
+
+    private Map<Long, Integer> topicSortNoMap(List<Map<String, Object>> topics) {
+        Map<Long, Integer> sortNos = new HashMap<Long, Integer>();
+        if (topics == null) {
+            return sortNos;
+        }
+        for (Map<String, Object> topic : topics) {
+            Long topicId = Maps.longValue(topic, "id");
+            Integer sortNo = Maps.intValue(topic, "sortNo", "sort_no");
+            if (topicId != null && sortNo != null) {
+                sortNos.put(topicId, sortNo);
+            }
+        }
+        return sortNos;
+    }
+
+    private void notifyTopicOrderChanged(Map<String, Object> topic, Integer newSortNo) {
+        if (topic == null) {
+            return;
+        }
+        Long meetingId = Maps.longValue(topic, "meetingId", "meeting_id");
+        Long topicId = Maps.longValue(topic, "id");
+        LinkedHashSet<String> receivers = new LinkedHashSet<String>();
+        addDepartmentSecretaryReceivers(receivers, Maps.stringValue(topic, "reportDepartmentId", "report_department_id"));
+        addDepartmentSecretaryReceivers(receivers, Maps.stringValue(topic, "participantDeptId", "participant_dept_id"));
+        for (Map<String, Object> attendee : meetingMapper.listTopicAttendees(topicId)) {
+            String userId = Maps.stringValue(attendee, "userId", "user_id");
+            if (userId != null && userId.length() > 0) {
+                receivers.add(userId);
+            }
+        }
+        for (String receiver : receivers) {
+            Map<String, Object> notice = notice(meetingId, topicId, receiver,
+                    "议题顺序调整通知",
+                    "议题《" + Maps.stringValue(topic, "title") + "》顺序已调整为第" + newSortNo + "项，请关注会议议程变化。");
+            meetingMapper.insertNotification(notice);
+            notificationSender.send(notice);
+        }
+    }
+
+    private void addDepartmentSecretaryReceivers(Set<String> receivers, String departmentIds) {
+        for (String departmentId : parseDepartmentIds(departmentIds)) {
+            Map<String, Object> secretary = userMapper.findSecretaryByDepartment(departmentId, groupCode);
+            if (secretary == null) {
+                continue;
+            }
+            String secretaryId = Maps.stringValue(secretary, "id", "userId", "user_id");
+            if (secretaryId != null && secretaryId.length() > 0) {
+                receivers.add(secretaryId);
+            }
+        }
+    }
+
     private Map<String, Object> notice(Long meetingId, Long topicId, String tousers, String title, String content) {
         Map<String, Object> notice = new HashMap<String, Object>();
         notice.put("meetingId", meetingId);
@@ -649,6 +733,49 @@ public class MeetingService {
         notice.put("content", content);
         notice.put("jobId", UUID.randomUUID().toString().replace("-", ""));
         return notice;
+    }
+
+    private void recordOperation(Long meetingId,
+                                 Long topicId,
+                                 String operationType,
+                                 String operationName,
+                                 Map<String, Object> currentUser,
+                                 List<Map<String, Object>> targets,
+                                 String operationContent) {
+        Map<String, Object> log = new HashMap<String, Object>();
+        log.put("meetingId", meetingId);
+        log.put("topicId", topicId);
+        log.put("operationType", operationType);
+        log.put("operationName", operationName);
+        log.put("operatorId", userId(currentUser));
+        log.put("operatorName", Maps.stringValue(currentUser, "realName", "real_name", "username", "userName", "user_name", "name"));
+        log.put("operatorRole", Maps.stringValue(currentUser, "role"));
+        log.put("operatorDeptId", Maps.stringValue(currentUser, "departmentId", "department_id", "deptId", "dept_id"));
+        log.put("operatorDeptName", Maps.stringValue(currentUser, "departmentName", "department_name", "deptName", "dept_name"));
+        log.put("targetUserIds", joinTargetValues(targets, "id", "userId", "user_id"));
+        log.put("targetUserNames", joinTargetValues(targets, "realName", "real_name", "username", "userName", "user_name", "name"));
+        log.put("targetDeptIds", joinTargetValues(targets, "departmentId", "department_id", "deptId", "dept_id"));
+        log.put("targetDeptNames", joinTargetValues(targets, "departmentName", "department_name", "deptName", "dept_name"));
+        log.put("operationContent", operationContent);
+        meetingMapper.insertOperationLog(log);
+    }
+
+    private String joinUserNames(List<Map<String, Object>> users) {
+        return joinTargetValues(users, "realName", "real_name", "username", "userName", "user_name", "name");
+    }
+
+    private String joinTargetValues(List<Map<String, Object>> targets, String... keys) {
+        List<String> values = new ArrayList<String>();
+        if (targets == null) {
+            return "";
+        }
+        for (Map<String, Object> target : targets) {
+            String value = Maps.stringValue(target, keys);
+            if (value != null && value.length() > 0 && !values.contains(value)) {
+                values.add(value);
+            }
+        }
+        return join(values);
     }
 
     private void saveTopics(Long meetingId, List<Map<String, Object>> topics) {

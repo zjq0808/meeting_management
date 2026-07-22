@@ -110,5 +110,7 @@ public interface MeetingMapper {
                                 @Param("userId") String userId,
                                 @Param("title") String title);
 
+    int insertOperationLog(Map<String, Object> operationLog);
+
     int insertUploadedFile(Map<String, Object> file);
 }

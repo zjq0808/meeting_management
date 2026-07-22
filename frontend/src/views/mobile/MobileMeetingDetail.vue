@@ -39,7 +39,7 @@
             <div class="topic-actions">
               <van-button v-if="canSelectReporter(topic)" size="small" type="primary" plain round @click="openPicker(topic, 'REPORT')">选汇报人</van-button>
               <van-button v-if="canSelectParticipant(topic)" size="small" type="primary" round @click="openPicker(topic, 'PARTAKE')">选参会人</van-button>
-              <van-button size="small" plain round @click="openConclusion(topic)">结论</van-button>
+              <van-button v-if="canViewTopic(topic)" size="small" plain round @click="openConclusion(topic)">结论</van-button>
             </div>
           </div>
         </article>
@@ -153,6 +153,15 @@ function canSelectParticipant(topic: TopicItem) {
 
 function canSelectRole() {
   return ['ADMIN', 'SECRETARY'].includes(user.value?.role || '')
+}
+
+function canViewTopic(topic: TopicItem) {
+  if (user.value?.role === 'ADMIN') return true
+  const departmentId = String(user.value?.departmentId || user.value?.department_id || user.value?.deptId || '')
+  if (!departmentId) return false
+  const reportIds = normalizeIds(topic.reportDepartmentIds || topic.reportDepartmentId)
+  const participantIds = normalizeIds(topic.participantDepartmentIds || topic.participantDeptId)
+  return reportIds.includes(departmentId) || participantIds.includes(departmentId)
 }
 
 function openPicker(topic: TopicItem, type: 'REPORT' | 'PARTAKE') {

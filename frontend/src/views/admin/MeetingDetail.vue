@@ -39,7 +39,7 @@
       </div>
       <el-table v-loading="loading" :data="topics" border empty-text="暂无议题">
         <el-table-column label="序号" width="76" align="center"><template #default="{ $index }">{{ pad($index + 1) }}</template></el-table-column>
-        <el-table-column label="议题名称" min-width="260"><template #default="{ row }"><strong>{{ row.title }}</strong><p class="topic-summary">{{ row.summary || '暂无会议纪要' }}</p></template></el-table-column>
+        <el-table-column label="议题名称" min-width="260"><template #default="{ row }"><strong>{{ row.title }}</strong></template></el-table-column>
         <el-table-column label="汇报部门" width="160"><template #default="{ row }">{{ row.reportDepartmentName || '-' }}</template></el-table-column>
         <el-table-column label="参会部门" min-width="180"><template #default="{ row }">{{ row.participantDepartments || '-' }}</template></el-table-column>
         <el-table-column label="状态" width="110"><template #default="{ row }"><el-tag>{{ topicStatusLabel(row.status) }}</el-tag></template></el-table-column>
@@ -90,10 +90,18 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="conclusionVisible" title="议题结论信息" width="560px">
+    <el-dialog v-model="conclusionVisible" title="议题结论信息" width="680px">
       <div v-if="activeConclusion" class="conclusion-dialog">
         <h4>{{ activeConclusion.title }}</h4>
         <p class="muted">汇报部门：{{ activeConclusion.reportDepartmentName || '-' }}</p>
+        <el-input
+          :model-value="activeConclusion.summary || '暂无会议纪要'"
+          type="textarea"
+          :rows="7"
+          readonly
+          resize="vertical"
+          class="topic-summary-input"
+        />
         <div class="conclusion-box">{{ activeConclusion.conclusion || '暂未录入会议结论' }}</div>
       </div>
     </el-dialog>
@@ -178,13 +186,12 @@ function canSelectRole() {
 }
 
 function canViewTopic(topic: TopicItem) {
-  const currentUserId = String(currentUser.value?.id || currentUser.value?.userId || currentUser.value?.employeeNo || '')
-  if (!currentUserId) return false
-  return (topic.attendees || []).some((attendee: any) => {
-    const attendeeType = attendee.attendeeType || attendee.attendee_type
-    const attendeeId = String(attendee.userId || attendee.user_id || attendee.id || '')
-    return ['REPORT', 'PARTAKE'].includes(attendeeType) && attendeeId === currentUserId
-  })
+  if (currentUser.value?.role === 'ADMIN') return true
+  const departmentId = String(currentUser.value?.departmentId || currentUser.value?.department_id || currentUser.value?.deptId || '')
+  if (!departmentId) return false
+  const reportIds = normalizeIds(topic.reportDepartmentIds || topic.reportDepartmentId)
+  const participantIds = normalizeIds(topic.participantDepartmentIds || topic.participantDeptId)
+  return reportIds.includes(departmentId) || participantIds.includes(departmentId)
 }
 
 function canShare(topic: TopicItem) {
@@ -330,6 +337,15 @@ onMounted(load)
   color: #6b7280;
   font-size: 12px;
   line-height: 1.5;
+}
+
+.topic-summary-input {
+  margin-top: 14px;
+}
+
+.topic-summary-input :deep(.el-textarea__inner) {
+  min-height: 168px;
+  line-height: 1.6;
 }
 
 .row-actions {

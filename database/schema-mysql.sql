@@ -1,4 +1,5 @@
 drop table if exists t_meeting_uploaded_file;
+drop table if exists t_meeting_operation_log;
 drop table if exists t_meeting_notification;
 drop table if exists t_meeting_attendee;
 drop table if exists t_meeting_topic;
@@ -143,6 +144,31 @@ create table t_meeting_notification (
     key idx_notice_meeting(meeting_id),
     key idx_notice_topic(topic_id)
 ) engine=InnoDB default charset=utf8mb4 comment='Meeting notification table';
+
+create table t_meeting_operation_log (
+    id bigint primary key auto_increment comment 'Operation log id',
+    meeting_id bigint comment 'Meeting id',
+    topic_id bigint comment 'Topic id',
+    operation_type varchar(64) not null comment 'SELECT_REPORTER/SELECT_PARTICIPANT/SHARE_TOPIC',
+    operation_name varchar(100) not null comment 'Operation display name',
+    operator_id varchar(500) comment 'Operator user id',
+    operator_name varchar(500) comment 'Operator name snapshot',
+    operator_role varchar(32) comment 'Operator role',
+    operator_dept_id varchar(700) comment 'Operator department id snapshot',
+    operator_dept_name varchar(500) comment 'Operator department name snapshot',
+    target_user_ids text comment 'Target user ids, comma separated',
+    target_user_names text comment 'Target user names, comma separated',
+    target_dept_ids text comment 'Target department ids, comma separated',
+    target_dept_names text comment 'Target department names, comma separated',
+    operation_content text comment 'Operation content',
+    created_at datetime not null default current_timestamp comment 'Operation time',
+    key idx_operation_meeting(meeting_id, created_at),
+    key idx_operation_topic(topic_id, created_at),
+    key idx_operation_operator(operator_id, created_at),
+    key idx_operation_type(operation_type, created_at),
+    constraint fk_operation_meeting foreign key(meeting_id) references t_meeting_main(id) on delete set null,
+    constraint fk_operation_topic foreign key(topic_id) references t_meeting_topic(id) on delete set null
+) engine=InnoDB default charset=utf8mb4 comment='Meeting operation log table';
 
 create table t_meeting_uploaded_file (
     id bigint primary key auto_increment comment 'Upload record id',

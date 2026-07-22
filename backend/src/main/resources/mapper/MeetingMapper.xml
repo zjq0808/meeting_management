@@ -450,6 +450,21 @@
           and n.title = #{title}
     </select>
 
+    <insert id="insertOperationLog" useGeneratedKeys="true" keyProperty="id">
+        insert into t_meeting_operation_log(
+            meeting_id, topic_id, operation_type, operation_name,
+            operator_id, operator_name, operator_role, operator_dept_id, operator_dept_name,
+            target_user_ids, target_user_names, target_dept_ids, target_dept_names,
+            operation_content, created_at
+        )
+        values(
+            #{meetingId}, #{topicId}, #{operationType}, #{operationName},
+            #{operatorId}, #{operatorName}, #{operatorRole}, #{operatorDeptId}, #{operatorDeptName},
+            #{targetUserIds}, #{targetUserNames}, #{targetDeptIds}, #{targetDeptNames},
+            #{operationContent}, now()
+        )
+    </insert>
+
     <insert id="insertUploadedFile">
         insert into t_meeting_uploaded_file(meeting_id, file_name, file_size, parser_status, parser_message, created_at)
         values(#{meetingId}, #{fileName}, #{fileSize}, #{parserStatus}, #{parserMessage}, now())

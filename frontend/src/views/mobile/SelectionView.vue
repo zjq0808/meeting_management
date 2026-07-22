@@ -8,21 +8,25 @@
       <van-empty v-if="tasks.length === 0" description="暂无待处理议题" />
     </van-cell-group>
 
-    <van-popup v-model:show="pickerVisible" position="bottom" round>
+    <van-popup v-model:show="pickerVisible" position="bottom" round class="selection-popup">
       <div class="picker">
         <h3>{{ activeTopic?.title }}</h3>
         <van-tabs v-model:active="attendeeType">
           <van-tab title="汇报人" name="REPORT" />
           <van-tab title="参会人" name="PARTAKE" />
         </van-tabs>
-        <van-checkbox-group v-model="selectedIds">
-          <van-cell-group>
-            <van-cell v-for="user in candidates" :key="user.id" clickable :title="user.realName || user.username" :label="`${user.departmentName || '-'} / ${user.employeeNo || '-'}`" @click="toggle(user.id)">
-              <template #right-icon><van-checkbox :name="user.id" /></template>
-            </van-cell>
-          </van-cell-group>
-        </van-checkbox-group>
-        <van-button block type="primary" :loading="submitting" @click="submit">提交参会名单</van-button>
+        <div class="picker-scroll">
+          <van-checkbox-group v-model="selectedIds">
+            <van-cell-group>
+              <van-cell v-for="user in candidates" :key="user.id" clickable :title="user.realName || user.username" :label="`${user.departmentName || '-'} / ${user.employeeNo || '-'}`" @click="toggle(user.id)">
+                <template #right-icon><van-checkbox :name="user.id" /></template>
+              </van-cell>
+            </van-cell-group>
+          </van-checkbox-group>
+        </div>
+        <div class="picker-footer">
+          <van-button block type="primary" :loading="submitting" @click="submit">提交参会名单</van-button>
+        </div>
       </div>
     </van-popup>
   </div>
@@ -84,11 +88,35 @@ onMounted(() => load().catch((error: any) => showFailToast(error.message || '加
 
 <style scoped>
 .picker {
-  padding: 16px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  max-height: 82vh;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  overflow: hidden;
 }
 
 h3 {
   margin: 0 0 12px;
   font-size: 18px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.selection-popup {
+  max-height: 82vh;
+  overflow: hidden;
+}
+
+.picker-scroll {
+  min-height: 0;
+  max-height: 48vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.picker-footer {
+  flex: none;
+  padding-top: 12px;
+  background: #fff;
 }
 </style>

@@ -30,6 +30,9 @@
         >
           <div class="topic-row__head">
             <StatusBadge :status="topic.status || 'WAITING'" type="topic" />
+            <span :class="['sign-chip', topicSigned(topic) ? 'signed' : 'unsigned']">
+              {{ topicSigned(topic) ? '已签到' : '未签到' }}
+            </span>
           </div>
           <h3>第 {{ topic.sortNo }} 项：{{ topic.title }}</h3>
           <div class="topic-row__meta">
@@ -237,6 +240,14 @@ function pendingNotifyIds(topic: TopicItem | null) {
     .filter(Boolean)
 }
 
+function topicSigned(topic: TopicItem | null) {
+  if (!topic) return false
+  const stat = (dashboard.value?.topicSignStats || []).find((item: any) => String(item.id) === String(topic.id))
+  if (stat) return Boolean(stat.signed)
+  const value = (topic as any).signed ?? (topic as any).reportDepartmentSigned ?? (topic as any).report_department_signed
+  return value === true || value === 1 || value === '1' || value === 'true'
+}
+
 onMounted(() => {
   load().catch((error: any) => ElMessage.error(error.message || '加载失败'))
   timer = window.setInterval(() => load().catch(() => undefined), 5000)
@@ -305,6 +316,30 @@ h3 {
   font-size: 13px;
 }
 
+.sign-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sign-chip.signed {
+  color: #067647;
+  background: #ecfdf3;
+  border: 1px solid #abefc6;
+}
+
+.sign-chip.unsigned {
+  color: #b54708;
+  background: #fffaeb;
+  border: 1px solid #fedf89;
+}
+
 .topic-row h3 {
   font-size: 15px;
   line-height: 1.5;
@@ -366,10 +401,11 @@ h3 {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  margin-bottom: 12px;
 }
 
 .conclusion-readonly p {
-  margin: 10px 0 0;
+  margin: 0;
   color: #475467;
   line-height: 1.7;
   white-space: pre-wrap;

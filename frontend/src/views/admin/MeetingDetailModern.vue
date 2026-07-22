@@ -38,7 +38,6 @@
         <el-table-column label="议题名称" min-width="280">
           <template #default="{ row }">
             <strong>{{ row.title }}</strong>
-            <p class="topic-summary">{{ row.summary || '暂无会议纪要' }}</p>
           </template>
         </el-table-column>
         <el-table-column label="汇报部门" width="180">
@@ -57,7 +56,7 @@
               <el-button v-if="canSelectParticipant(row)" size="small" link type="primary" @click="openSelector(row, 'PARTAKE')">选择参会人</el-button>
               <el-button v-if="canShare(row)" size="small" link type="primary" :icon="Share" :loading="sharing" @click="openShareSelector(row)">分享</el-button>
               <el-button v-if="pendingNotifyIds(row).length" size="small" link type="primary" :loading="notifying" @click="notifyTopicPending(row)">通知参会人</el-button>
-              <el-button size="small" link type="primary" @click="showTopic(row)">查看</el-button>
+              <el-button v-if="canViewTopic(row)" size="small" link type="primary" @click="showTopic(row)">查看</el-button>
             </div>
           </template>
         </el-table-column>
@@ -78,7 +77,7 @@
       @confirm="submitSelection"
     />
 
-    <el-dialog v-model="topicDialogVisible" :title="topicDialogTitle" width="640px" destroy-on-close>
+    <el-dialog v-model="topicDialogVisible" :title="topicDialogTitle" width="760px" destroy-on-close>
       <el-form v-if="topicDraft" :model="topicDraft" label-position="top">
         <el-form-item label="议题名称">
           <el-input v-model="topicDraft.title" :disabled="!isAdmin" />
@@ -87,7 +86,7 @@
           <el-input v-model="topicDraft.topicType" :disabled="!isAdmin" />
         </el-form-item>
         <el-form-item label="会议纪要">
-          <el-input v-model="topicDraft.summary" type="textarea" :rows="4" :disabled="!isAdmin" resize="none" />
+          <el-input v-model="topicDraft.summary" type="textarea" :rows="7" :readonly="!isAdmin" resize="vertical" class="topic-summary-input" />
         </el-form-item>
         <el-form-item label="会议结论">
           <el-input v-model="topicDraft.conclusion" type="textarea" :rows="4" :disabled="!isAdmin" resize="none" />
@@ -302,6 +301,14 @@ function canShare(topic: TopicItem) {
   return !isAdmin.value && currentUser.value?.role === 'SECRETARY' && (canSelectReporter(topic) || canSelectParticipant(topic))
 }
 
+function canViewTopic(topic: TopicItem) {
+  if (isAdmin.value) return true
+  if (!currentDepartmentId.value) return false
+  const reportIds = normalizeIds(topic.reportDepartmentIds || topic.reportDepartmentId)
+  const participantIds = normalizeIds(topic.participantDepartmentIds || topic.participantDeptId)
+  return reportIds.includes(currentDepartmentId.value) || participantIds.includes(currentDepartmentId.value)
+}
+
 function openSelector(topic: TopicItem, action: 'REPORT' | 'PARTAKE') {
   activeTopic.value = topic
   activeAction.value = action
@@ -479,9 +486,9 @@ function notifyConfirmHtml(items: PendingNotifyPerson[]) {
     return `
       <section style="width:100%;box-sizing:border-box;border:1px solid #e5e7eb;border-radius:8px;background:#fff;margin-top:12px;overflow:hidden;">
         <header style="padding:12px 14px;background:#f8fafc;border-bottom:1px solid #e5e7eb;">
-          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-            <strong style="color:#111827;white-space:nowrap;">\u7b2c ${escapeHtml(String(group.topicSortNo || '-'))} \u9879</strong>
-            <span style="color:#475467;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(group.topicTitle)}</span>
+          <div style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:start;gap:8px;min-width:0;">
+            <strong style="color:#111827;white-space:nowrap;line-height:1.6;">\u7b2c ${escapeHtml(String(group.topicSortNo || '-'))} \u9879</strong>
+            <span style="color:#475467;line-height:1.6;white-space:normal;word-break:break-word;">${escapeHtml(group.topicTitle)}</span>
             <span style="margin-left:auto;color:#98a2b3;font-size:12px;white-space:nowrap;">${group.items.length} \u4eba</span>
           </div>
         </header>
@@ -650,6 +657,11 @@ h2 {
   margin: 6px 0 0;
   color: #667085;
   font-size: 12px;
+}
+
+.topic-summary-input :deep(.el-textarea__inner) {
+  min-height: 168px;
+  line-height: 1.6;
 }
 
 .row-actions {

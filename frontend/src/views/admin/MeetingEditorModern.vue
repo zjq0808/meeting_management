@@ -107,9 +107,14 @@
               </el-select>
             </template>
           </el-table-column>
-          <el-table-column label="会议纪要" min-width="240">
+          <el-table-column label="会议纪要" min-width="300">
             <template #default="{ row }">
-              <el-input v-model="row.summary" type="textarea" :rows="2" resize="none" />
+              <el-input v-model="row.summary" type="textarea" :rows="3" resize="none" />
+            </template>
+          </el-table-column>
+          <el-table-column label="拟结论" min-width="300">
+            <template #default="{ row }">
+              <el-input v-model="row.conclusion" type="textarea" :rows="3" resize="none" placeholder="请输入拟结论内容" />
             </template>
           </el-table-column>
           <el-table-column label="操作" width="78" align="center" fixed="right">
@@ -183,6 +188,8 @@ function addTopic() {
   form.topics.push({
     topicType: '三重一大',
     title: '',
+    summary: '',
+    conclusion: '',
     sortNo: form.topics.length + 1,
     reportDepartmentIds: [],
     participantDepartmentIds: []
@@ -371,7 +378,7 @@ onMounted(() => load().catch((error: any) => ElMessage.error(error.message || '�
 <style scoped>
 .editor-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 0.36fr) minmax(0, 0.64fr);
+  grid-template-columns: minmax(300px, 0.28fr) minmax(0, 0.72fr);
   gap: 20px;
   align-items: start;
 }
@@ -432,6 +439,15 @@ h2 {
 .topic-head > div {
   display: flex;
   gap: 10px;
+}
+
+.topic-panel :deep(.el-table .cell) {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.topic-panel :deep(.el-textarea__inner) {
+  line-height: 1.5;
 }
 
 .import-tip {
